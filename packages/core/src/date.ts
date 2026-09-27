@@ -33,6 +33,16 @@ export function addDays(date: DateStr, days: number): DateStr {
   return fromUtc(new Date(parseDate(date).getTime() + days * DAY_MS));
 }
 
+/** Same day `months` later, clamped to the last day of that month. */
+export function addMonths(date: DateStr, months: number): DateStr {
+  const [y, m, d] = date.split('-').map(Number);
+  const first = new Date(Date.UTC(y!, m! - 1 + months, 1));
+  const year = first.getUTCFullYear();
+  const month = first.getUTCMonth();
+  const last = new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
+  return fromUtc(new Date(Date.UTC(year, month, Math.min(d!, last))));
+}
+
 /** 0 = Sunday … 6 = Saturday */
 export function weekday(date: DateStr): number {
   return parseDate(date).getUTCDay();

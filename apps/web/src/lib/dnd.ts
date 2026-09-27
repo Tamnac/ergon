@@ -1,6 +1,7 @@
 import type { Target } from '../state/view';
 
 const THRESHOLD = 5;
+const LONG_PRESS = 400;
 const zones = new WeakMap<Element, () => Target>();
 
 /** Marks a list element as a drop target; its `[data-drag-item]` children define the slots. */
@@ -14,25 +15,44 @@ export interface DraggableOptions {
   onDrop: (target: Target, index: number) => void;
 }
 
-/** Pointer-based dragging; `index` is the slot among the zone's other items. */
+/**
+ * Pointer-based dragging; `index` is the slot among the zone's other items. Touch drags
+ * start with a long press so a swipe still scrolls.
+ */
 export function makeDraggable(element: HTMLElement, options: DraggableOptions) {
   element.dataset.dragItem = '';
   element.addEventListener('pointerdown', (down) => {
     if (down.button !== 0 || options.disabled()) return;
+    if (document.documentElement.classList.contains('is-dragging')) return;
     if ((down.target as Element).closest('input, button, a')) return;
 
+    const touch = down.pointerType === 'touch';
     let session: DragSession | undefined;
+    const pressTimer = touch
+      ? setTimeout(() => {
+          session = new DragSession(element, down);
+          session.move(down.clientX, down.clientY);
+        }, LONG_PRESS)
+      : undefined;
     const onMove = (event: PointerEvent) => {
+      if (event.pointerId !== down.pointerId) return;
       if (!session) {
         const distance = Math.hypot(event.clientX - down.clientX, event.clientY - down.clientY);
         if (distance < THRESHOLD) return;
+        if (touch) return stop(false);
         session = new DragSession(element, down);
       }
       event.preventDefault();
       session.move(event.clientX, event.clientY);
     };
+    const onTouchMove = (event: TouchEvent) => {
+      if (session) event.preventDefault();
+    };
     const stop = (drop: boolean) => {
+      clearTimeout(pressTimer);
+      window.removeEventListener('touchmove', onTouchMove);
       window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerdown', onOtherDown);
       window.removeEventListener('pointerup', onUp);
       window.removeEventListener('pointercancel', onCancel);
       window.removeEventListener('keydown', onKey, true);
@@ -41,15 +61,25 @@ export function makeDraggable(element: HTMLElement, options: DraggableOptions) {
       suppressClick();
       if (drop && result) options.onDrop(result.target, result.index);
     };
-    const onUp = () => stop(true);
-    const onCancel = () => stop(false);
+    const onUp = (event: PointerEvent) => {
+      if (event.pointerId === down.pointerId) stop(true);
+    };
+    const onCancel = (event: PointerEvent) => {
+      if (event.pointerId === down.pointerId) stop(false);
+    };
+    // A second finger (e.g. a pinch) cancels a long press that hasn't started dragging.
+    const onOtherDown = (event: PointerEvent) => {
+      if (event.pointerId !== down.pointerId && !session) stop(false);
+    };
     const onKey = (event: KeyboardEvent) => {
       if (event.key !== 'Escape') return;
       event.preventDefault();
       event.stopPropagation();
       stop(false);
     };
+    window.addEventListener('touchmove', onTouchMove, { passive: false });
     window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerdown', onOtherDown);
     window.addEventListener('pointerup', onUp);
     window.addEventListener('pointercancel', onCancel);
     window.addEventListener('keydown', onKey, true);

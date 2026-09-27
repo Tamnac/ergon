@@ -2,6 +2,7 @@ import type { DayCount } from '@ergon/core';
 import { undo, updateSettings } from '../state/actions';
 import { today } from '../state/today';
 import {
+  helpOpen,
   jumpTo,
   setAddingKey,
   setHelpOpen,
@@ -22,7 +23,7 @@ export const shortcuts: [keys: string, action: string][] = [
   ['Space', 'Complete focused todo'],
   ['> / <', 'Move focused todo to next / previous day'],
   ['Delete', 'Delete focused todo'],
-  ['?', 'Show shortcuts'],
+  ['? / Ctrl + /', 'Show shortcuts'],
 ];
 
 function isTyping(target: EventTarget | null) {
@@ -35,9 +36,16 @@ function isTyping(target: EventTarget | null) {
 /** Global keys. Keys on a focused todo are handled in `TodoItem`. */
 export function installShortcuts(): () => void {
   const onKeyDown = (event: KeyboardEvent) => {
-    if (event.defaultPrevented || isTyping(event.target) || document.querySelector('dialog[open]'))
-      return;
+    if (event.defaultPrevented || isTyping(event.target)) return;
     const mod = event.ctrlKey || event.metaKey;
+    const dialogOpen = document.querySelector('dialog[open]') !== null;
+    if (mod && (event.key === '/' || event.code === 'Slash')) {
+      event.preventDefault();
+      if (helpOpen()) setHelpOpen(false);
+      else if (!dialogOpen) setHelpOpen(true);
+      return;
+    }
+    if (dialogOpen) return;
     if (mod && !event.shiftKey && event.key.toLowerCase() === 'z') {
       event.preventDefault();
       void undo();

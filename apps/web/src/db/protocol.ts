@@ -3,6 +3,7 @@ import type { Entity, Storage } from '@ergon/core';
 export const methods = [
   'write',
   'todosBetween',
+  'todoMarks',
   'listTodos',
   'lists',
   'listGroups',

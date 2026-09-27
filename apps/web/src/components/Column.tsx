@@ -1,5 +1,5 @@
 import type { Todo } from '@ergon/core';
-import { For, Index, Show, type JSX } from 'solid-js';
+import { For, Show, type JSX } from 'solid-js';
 import { registerDropZone } from '../lib/dnd';
 import { addTodo } from '../state/actions';
 import { addingKey, setAddingKey, targetKey, type Target } from '../state/view';
@@ -7,18 +7,16 @@ import { InlineInput } from './InlineInput';
 import { TodoItem } from './TodoItem';
 import './Column.css';
 
-/** A day or list: header, todos, and empty ruled rows that open the add input. */
+/** A day or list: header, todos, and the empty space below them that opens the add input. */
 export function Column(props: {
   target: Target;
   items: readonly Todo[];
   header: JSX.Element;
   label: string;
-  rows: number;
   class?: string;
 }) {
   const key = () => targetKey(props.target);
   const adding = () => addingKey() === key();
-  const fillers = () => Math.max(1, props.rows - props.items.length - (adding() ? 1 : 0));
   const openAdd = () => setAddingKey(key());
 
   return (
@@ -39,15 +37,11 @@ export function Column(props: {
             />
           </li>
         </Show>
-        <Index each={Array.from({ length: fillers() })}>
-          {(_, i) => (
-            <li class="todo-row todo-filler" onClick={openAdd}>
-              <Show when={i === 0 && !adding()}>
-                <button type="button" class="todo-add-button" aria-label="Add todo" />
-              </Show>
-            </li>
-          )}
-        </Index>
+        <li class="todo-filler" onClick={openAdd}>
+          <Show when={!adding()}>
+            <button type="button" class="todo-add-button" aria-label="Add todo" />
+          </Show>
+        </li>
       </ul>
     </section>
   );

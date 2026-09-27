@@ -1,5 +1,6 @@
 import type { List } from '@ergon/core';
 import { For, Show, createSignal } from 'solid-js';
+import { isPhone } from '../lib/viewport';
 import {
   addGroup,
   addList,
@@ -13,22 +14,110 @@ import {
 } from '../state/actions';
 import { groups, lists, todosByList } from '../state/data';
 import { activeGroup, panelOpen, setActiveGroupId, setPanelOpen } from '../state/view';
+import { Cap } from './Cap';
 import { Column } from './Column';
-import { IconButton } from './Icon';
+import { Icon, IconButton } from './Icon';
 import { InlineInput } from './InlineInput';
 import { Menu } from './Menu';
 import './ListsPanel.css';
 
+const listsIn = (groupId: string) => lists.filter((l) => l.groupId === groupId);
+
 export function ListsPanel() {
-  const [renamingGroup, setRenamingGroup] = createSignal<string | null>(null);
-  const [addingGroup, setAddingGroup] = createSignal(false);
   const [addingList, setAddingList] = createSignal(false);
 
-  const listsIn = (groupId: string) => lists.filter((l) => l.groupId === groupId);
+  return (
+    <div class="lists-drawer" classList={{ 'is-collapsed': !panelOpen() && !isPhone() }}>
+      <div class="lists-drawer-content">
+        <Show when={activeGroup()}>
+          {(group) => (
+            <section class="lists" aria-label="Lists">
+              <For each={listsIn(group().id)}>{(list) => <ListColumn list={list} />}</For>
+              <Show
+                when={addingList()}
+                fallback={
+                  <button type="button" class="list-new" onClick={() => setAddingList(true)}>
+                    <Icon name="plus" />
+                    New list
+                  </button>
+                }
+              >
+                <div class="list-new is-adding">
+                  <InlineInput
+                    class="list-name-input"
+                    label="New list name"
+                    placeholder="List name"
+                    onCommit={(name) => {
+                      if (name.trim()) void addList(group().id, name.trim());
+                      setAddingList(false);
+                    }}
+                    onCancel={() => setAddingList(false)}
+                  />
+                </div>
+              </Show>
+            </section>
+          )}
+        </Show>
+      </div>
+    </div>
+  );
+}
+
+/** Tabs of list groups, with the tab menu and panel toggle at the end. */
+export function TabBar() {
+  const [renamingGroup, setRenamingGroup] = createSignal<string | null>(null);
+  const [addingGroup, setAddingGroup] = createSignal(false);
 
   return (
-    <section class="lists-panel" aria-label="Lists">
-      <div class="tabs">
+    <div class="tabs">
+      <div class="tab-list" role="tablist" aria-label="Tabs">
+        <For each={groups}>
+          {(group) => (
+            <Show
+              when={renamingGroup() === group.id}
+              fallback={
+                <button
+                  type="button"
+                  role="tab"
+                  class="tab"
+                  aria-selected={group.id === activeGroup()?.id}
+                  onClick={() => setActiveGroupId(group.id)}
+                  onDblClick={() => setRenamingGroup(group.id)}
+                >
+                  {group.name}
+                  <span class="tab-count">{listsIn(group.id).length}</span>
+                </button>
+              }
+            >
+              <InlineInput
+                class="tab-input"
+                label="Tab name"
+                value={group.name}
+                onCommit={(name) => {
+                  if (name.trim()) void renameGroup(group, name.trim());
+                  setRenamingGroup(null);
+                }}
+                onCancel={() => setRenamingGroup(null)}
+              />
+            </Show>
+          )}
+        </For>
+      </div>
+      <Show
+        when={addingGroup()}
+        fallback={<IconButton icon="plus" label="Add tab" onClick={() => setAddingGroup(true)} />}
+      >
+        <InlineInput
+          class="tab-input"
+          label="New tab name"
+          onCommit={(name) => {
+            setAddingGroup(false);
+            if (name.trim()) void addGroup(name.trim()).then(setActiveGroupId);
+          }}
+          onCancel={() => setAddingGroup(false)}
+        />
+      </Show>
+      <div class="tabs-end">
         <Show when={activeGroup()}>
           {(group) => (
             <Menu
@@ -46,89 +135,15 @@ export function ListsPanel() {
             />
           )}
         </Show>
-        <div class="tab-list" role="tablist">
-          <For each={groups}>
-            {(group) => (
-              <Show
-                when={renamingGroup() === group.id}
-                fallback={
-                  <button
-                    type="button"
-                    role="tab"
-                    class="tab"
-                    aria-selected={group.id === activeGroup()?.id}
-                    onClick={() => setActiveGroupId(group.id)}
-                    onDblClick={() => setRenamingGroup(group.id)}
-                  >
-                    {group.name}
-                    <span class="tab-count">{listsIn(group.id).length}</span>
-                  </button>
-                }
-              >
-                <InlineInput
-                  class="tab-input"
-                  label="Tab name"
-                  value={group.name}
-                  onCommit={(name) => {
-                    if (name.trim()) void renameGroup(group, name.trim());
-                    setRenamingGroup(null);
-                  }}
-                  onCancel={() => setRenamingGroup(null)}
-                />
-              </Show>
-            )}
-          </For>
-        </div>
-        <Show
-          when={addingGroup()}
-          fallback={<IconButton icon="plus" label="Add tab" onClick={() => setAddingGroup(true)} />}
-        >
-          <InlineInput
-            class="tab-input"
-            label="New tab name"
-            onCommit={(name) => {
-              setAddingGroup(false);
-              if (name.trim()) void addGroup(name.trim()).then(setActiveGroupId);
-            }}
-            onCancel={() => setAddingGroup(false)}
+        <Show when={!isPhone()}>
+          <IconButton
+            icon={panelOpen() ? 'chevron-down' : 'chevron-up'}
+            label={panelOpen() ? 'Hide lists' : 'Show lists'}
+            onClick={() => setPanelOpen(!panelOpen())}
           />
         </Show>
-        <IconButton
-          class="tabs-toggle"
-          icon={panelOpen() ? 'chevron-down' : 'chevron-up'}
-          label={panelOpen() ? 'Hide lists' : 'Show lists'}
-          onClick={() => setPanelOpen(!panelOpen())}
-        />
       </div>
-      <Show when={panelOpen() && activeGroup()}>
-        {(group) => (
-          <div class="lists">
-            <For each={listsIn(group().id)}>{(list) => <ListColumn list={list} />}</For>
-            <div class="list-new">
-              <Show
-                when={addingList()}
-                fallback={
-                  <button type="button" class="chip" onClick={() => setAddingList(true)}>
-                    + New list
-                  </button>
-                }
-              >
-                <InlineInput
-                  class="list-name-input"
-                  label="New list name"
-                  placeholder="List name"
-                  onCommit={(name) => {
-                    if (name.trim()) void addList(group().id, name.trim());
-                    setAddingList(false);
-                  }}
-                  onCancel={() => setAddingList(false)}
-                />
-              </Show>
-            </div>
-          </div>
-        )}
-      </Show>
-    </section>
+    </div>
   );
 }
 
@@ -141,7 +156,7 @@ function ListColumn(props: { list: List }) {
         when={renaming()}
         fallback={
           <h2 class="list-name" onClick={() => setRenaming(true)}>
-            {props.list.name}
+            <Cap text={props.list.name} />
           </h2>
         }
       >
@@ -182,7 +197,6 @@ function ListColumn(props: { list: List }) {
       items={todosByList().get(props.list.id) ?? []}
       header={header}
       label={props.list.name}
-      rows={6}
     />
   );
 }

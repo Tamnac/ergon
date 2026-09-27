@@ -16,7 +16,7 @@ import {
   type Todo,
   type Value,
 } from '../model';
-import type { ChangeListener, Storage } from '../storage';
+import type { ChangeListener, Storage, TodoMark } from '../storage';
 import type { Row, SqlDriver, SqlValue } from './driver';
 import { migrate } from './migrations';
 
@@ -72,6 +72,24 @@ export class Database implements Storage {
       `SELECT * FROM todo WHERE deleted = 0 AND (date BETWEEN ? AND ?${rollover ? ' OR (done = 0 AND date < ?)' : ''}) ORDER BY "order", id`,
       rollover ? [from, to, today] : [from, to],
     );
+  }
+
+  async todoMarks(from: DateStr, to: DateStr, today: DateStr): Promise<TodoMark[]> {
+    const rows = await this.#serial(() =>
+      this.#driver.query(
+        `SELECT id, day, done, length(text) AS length FROM (
+           SELECT *, CASE WHEN done = 0 AND date < ? THEN ? ELSE date END AS day FROM todo
+           WHERE deleted = 0 AND kind = 'todo' AND (date BETWEEN ? AND ? OR (done = 0 AND date < ?))
+         ) WHERE day BETWEEN ? AND ? ORDER BY day, "order", id`,
+        [today, today, from, to, today, from, to],
+      ),
+    );
+    return rows.map((row) => ({
+      id: row.id as string,
+      date: row.day as DateStr,
+      done: Number(row.done) === 1,
+      length: Number(row.length),
+    }));
   }
 
   listTodos(): Promise<Todo[]> {

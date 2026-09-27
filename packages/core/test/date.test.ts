@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   addDays,
+  addMonths,
   dayColumns,
   isDateStr,
   localeWeekStart,
@@ -20,6 +21,13 @@ describe('date utils', () => {
     expect(addDays('2028-02-28', 1)).toBe('2028-02-29');
     expect(addDays('2026-03-28', 2)).toBe('2026-03-30');
     expect(addDays('2026-10-26', -2)).toBe('2026-10-24');
+  });
+
+  it('adds months, clamping to the end of the month', () => {
+    expect(addMonths('2026-01-31', 1)).toBe('2026-02-28');
+    expect(addMonths('2026-12-15', 1)).toBe('2027-01-15');
+    expect(addMonths('2026-03-31', -1)).toBe('2026-02-28');
+    expect(addMonths('2028-01-31', 1)).toBe('2028-02-29');
   });
 
   it('finds the start of the week', () => {

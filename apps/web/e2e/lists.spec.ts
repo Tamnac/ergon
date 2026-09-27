@@ -2,7 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { addTodos, openApp, todo } from './helpers';
 
 async function addList(page: Page, name: string) {
-  await page.getByRole('button', { name: '+ New list' }).click();
+  await page.getByRole('button', { name: 'New list' }).click();
   const input = page.getByRole('textbox', { name: 'New list name' });
   await input.fill(name);
   await input.press('Enter');
@@ -60,8 +60,8 @@ test('adds tabs and moves lists between them', async ({ page }) => {
 
 test('collapses the lists panel', async ({ page }) => {
   await page.getByRole('button', { name: 'Hide lists' }).click();
-  await expect(page.getByRole('button', { name: '+ New list' })).toBeHidden();
+  await expect(page.getByRole('button', { name: 'New list' })).toBeHidden();
   await page.reload();
   await page.getByRole('button', { name: 'Show lists' }).click();
-  await expect(page.getByRole('button', { name: '+ New list' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'New list' })).toBeVisible();
 });

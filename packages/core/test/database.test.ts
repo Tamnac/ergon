@@ -45,6 +45,23 @@ describe('Database', () => {
     expect(await ids('2026-09-20', '2026-09-20')).toEqual(['done', 'old']);
   });
 
+  it('returns todo marks on their effective date', async () => {
+    const db = await openDb();
+    await db.write([
+      ...todo('old', '2026-09-20'),
+      ...todo('done', '2026-09-20', { done: true }),
+      ...todo('future', '2026-09-30', { text: 'longer' }),
+      ...todo('heading', today, { kind: 'heading' }),
+    ]);
+    const future = { id: 'future', date: '2026-09-30', done: false, length: 6 };
+    expect(await db.todoMarks('2026-09-01', '2026-09-30', today)).toEqual([
+      { id: 'done', date: '2026-09-20', done: true, length: 4 },
+      { id: 'old', date: today, done: false, length: 3 },
+      future,
+    ]);
+    expect(await db.todoMarks('2026-09-27', '2026-09-30', today)).toEqual([future]);
+  });
+
   it('hides tombstoned rows', async () => {
     const db = await openDb();
     await db.write(todo('a', today));

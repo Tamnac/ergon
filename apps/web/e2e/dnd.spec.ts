@@ -21,7 +21,7 @@ test('moves between days', async ({ page }) => {
 });
 
 test('moves between days and lists', async ({ page }) => {
-  await page.getByRole('button', { name: '+ New list' }).click();
+  await page.getByRole('button', { name: 'New list' }).click();
   await page.getByRole('textbox', { name: 'New list name' }).fill('Someday');
   await page.getByRole('textbox', { name: 'New list name' }).press('Enter');
   const list = page.locator('.list-column', { hasText: 'Someday' });

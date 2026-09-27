@@ -1,16 +1,19 @@
 import { Show, createEffect, onCleanup, onMount } from 'solid-js';
+import { Calendar } from './components/Calendar';
 import { DayGrid } from './components/DayGrid';
-import { Footer } from './components/Footer';
 import { Header } from './components/Header';
 import { HelpDialog } from './components/HelpDialog';
-import { ListsPanel } from './components/ListsPanel';
+import { ListsPanel, TabBar } from './components/ListsPanel';
 import { SettingsDialog } from './components/SettingsDialog';
+import { Sidebar } from './components/Sidebar';
 import { readableOn } from './lib/color';
 import { setEffectLayer } from './lib/effects';
 import { installShortcuts } from './lib/shortcuts';
+import { isPhone } from './lib/viewport';
 import { addGroup } from './state/actions';
 import { groups, groupsReady, settings, settingsReady } from './state/data';
 import { storageError } from './state/storage';
+import { mobileView } from './state/view';
 
 /** Fixed id so devices that seed concurrently end up with the same tab. */
 const DEFAULT_GROUP_ID = 'default';
@@ -36,9 +39,14 @@ export function App() {
 
   onMount(() => onCleanup(installShortcuts()));
 
+  const showDays = () => !isPhone() || mobileView() === 'days';
+  const showLists = () => !isPhone() || mobileView() === 'lists';
+
   return (
-    <>
-      <Header />
+    <div class="app" classList={{ 'is-phone': isPhone() }}>
+      <Show when={showDays()}>
+        <Header />
+      </Show>
       <main class="main">
         <Show when={storageError()}>
           <p class="error" role="alert">
@@ -46,13 +54,21 @@ export function App() {
             the Origin Private File System, or it is disabled in private mode.
           </p>
         </Show>
-        <DayGrid />
-        <ListsPanel />
+        <Show when={showDays()}>
+          <DayGrid />
+        </Show>
+        <Show when={showLists()}>
+          <ListsPanel />
+        </Show>
       </main>
-      <Footer />
+      <Show when={showLists()}>
+        <TabBar />
+      </Show>
+      <Sidebar />
       <div class="effect-layer" ref={setEffectLayer} />
       <SettingsDialog />
       <HelpDialog />
-    </>
+      <Calendar />
+    </div>
   );
 }

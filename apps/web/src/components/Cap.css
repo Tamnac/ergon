@@ -1,0 +1,10 @@
+.cap {
+  font: 600 2.75rem / 0.78 var(--font-display);
+  text-transform: uppercase;
+}
+
+.cap-rest {
+  font: 600 var(--text-xs) / 1 var(--font-body);
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+}

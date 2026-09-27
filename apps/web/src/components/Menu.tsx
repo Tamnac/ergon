@@ -8,7 +8,7 @@ export interface MenuItem {
   disabled?: boolean;
 }
 
-/** Popover menu anchored below its button. */
+/** Popover menu anchored below its button, or above it in the lower half of the window. */
 export function Menu(props: { label: string; items: MenuItem[]; class?: string }) {
   const id = createUniqueId();
   let button!: HTMLButtonElement;
@@ -19,8 +19,10 @@ export function Menu(props: { label: string; items: MenuItem[]; class?: string }
       if ((event as ToggleEvent).newState !== 'open') return;
       const rect = button.getBoundingClientRect();
       const alignRight = rect.left > window.innerWidth / 2;
+      const openUp = rect.top > window.innerHeight / 2;
       Object.assign(popover.style, {
-        top: `${rect.bottom + 4}px`,
+        top: openUp ? 'auto' : `${rect.bottom + 4}px`,
+        bottom: openUp ? `${window.innerHeight - rect.top + 4}px` : 'auto',
         left: alignRight ? 'auto' : `${rect.left}px`,
         right: alignRight ? `${window.innerWidth - rect.right}px` : 'auto',
       });

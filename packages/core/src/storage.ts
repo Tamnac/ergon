@@ -3,12 +3,22 @@ import type { Change, Entity, List, ListGroup, Settings, Todo } from './model';
 
 export type ChangeListener = (entities: ReadonlySet<Entity>) => void;
 
+/** A todo reduced to what the month calendar draws. `length` is the text length. */
+export interface TodoMark {
+  id: string;
+  date: DateStr;
+  done: boolean;
+  length: number;
+}
+
 /** What the UI needs from local storage, independent of the SQLite backend. */
 export interface Storage {
   /** Stamps and applies changes; resolves with the changes that undo them. */
   write(changes: readonly Change[]): Promise<Change[]>;
   /** Todos dated in `[from, to]`, plus undone past todos if `today` is in range. */
   todosBetween(from: DateStr, to: DateStr, today: DateStr): Promise<Todo[]>;
+  /** Marks for todos (not headings) whose effective date is in `[from, to]`. */
+  todoMarks(from: DateStr, to: DateStr, today: DateStr): Promise<TodoMark[]>;
   listTodos(): Promise<Todo[]>;
   lists(): Promise<List[]>;
   listGroups(): Promise<ListGroup[]>;

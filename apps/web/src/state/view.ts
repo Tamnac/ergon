@@ -8,6 +8,7 @@ import {
 } from '@ergon/core';
 import { createEffect, createMemo, createRoot, createSignal, on } from 'solid-js';
 import { persistedSignal } from '../lib/persisted';
+import { isPhone, viewportWidth } from '../lib/viewport';
 import { groupBy, groups, settings, weekStart } from './data';
 import { createQuery } from './query';
 import { storage } from './storage';
@@ -29,6 +30,11 @@ export const [focusRequest, setFocusRequest] = createSignal<{ id: string; key: s
 );
 export const [settingsOpen, setSettingsOpen] = createSignal(false);
 export const [helpOpen, setHelpOpen] = createSignal(false);
+/** What the phone layout shows. */
+export const [mobileView, setMobileView] = persistedSignal<'days' | 'lists'>(
+  'ergon.mobileView',
+  'days',
+);
 export const [panelOpen, setPanelOpen] = persistedSignal('ergon.panelOpen', true);
 export const [activeGroupId, setActiveGroupId] = persistedSignal<string | null>(
   'ergon.activeGroup',
@@ -37,26 +43,43 @@ export const [activeGroupId, setActiveGroupId] = persistedSignal<string | null>(
 
 export const activeGroup = () => groups.find((g) => g.id === activeGroupId()) ?? groups[0];
 
-export const { columns, visibleDays, todosByDate } = createRoot(() => {
-  const columns = createMemo(() =>
-    dayColumns(start(), settings.dayCount, settings.condensedWeekends),
-  );
-  const visibleDays = createMemo(() => columns().flat());
-  const [dayTodos] = createQuery<Todo[]>(
+/** Width a day column needs including its gap, and the chrome around the grid. */
+const COLUMN_WIDTH = 170;
+const CHROME_WIDTH = 112;
+
+/** The day count setting, capped by what fits the window. */
+export function dayCount(): number {
+  if (isPhone()) return 1;
+  const fits = Math.floor((viewportWidth() - CHROME_WIDTH) / COLUMN_WIDTH);
+  return Math.max(1, Math.min(settings.dayCount, fits));
+}
+
+export const { columns, visibleDays, requestedDays, todosByDate } = createRoot(() => {
+  const requested = createMemo(() => dayColumns(start(), dayCount(), settings.condensedWeekends));
+  /** The days being navigated to; `visibleDays` follows once their todos are loaded. */
+  const requestedDays = createMemo(() => requested().flat());
+  // Days switch together with their todos, so columns never show up empty while loading.
+  const [days] = createQuery<{ columns: DateStr[][]; todos: Todo[] }>(
     ['todo'],
-    () => storage.todosBetween(visibleDays()[0]!, visibleDays().at(-1)!, today()),
-    [],
+    async () => {
+      const columns = requested();
+      const todos = await storage.todosBetween(columns[0]![0]!, columns.at(-1)!.at(-1)!, today());
+      return { columns, todos };
+    },
+    { columns: [], todos: [] },
   );
-  const todosByDate = createMemo(() => groupBy(dayTodos, (todo) => effectiveDate(todo, today())));
+  const columns = () => days.columns;
+  const visibleDays = createMemo(() => days.columns.flat());
+  const todosByDate = createMemo(() => groupBy(days.todos, (todo) => effectiveDate(todo, today())));
 
   // The week view always starts on the configured first day of the week.
   createEffect(
-    on([() => settings.dayCount, weekStart], ([count, first]) => {
+    on([dayCount, weekStart], ([count, first]) => {
       if (count === 7) setStart((s) => startOfWeek(s, first));
     }),
   );
 
-  return { columns, visibleDays, todosByDate };
+  return { columns, visibleDays, requestedDays, todosByDate };
 });
 
 export function shiftDays(days: number) {
@@ -64,5 +87,5 @@ export function shiftDays(days: number) {
 }
 
 export function jumpTo(date: DateStr) {
-  setStart(settings.dayCount === 7 ? startOfWeek(date, weekStart()) : date);
+  setStart(dayCount() === 7 ? startOfWeek(date, weekStart()) : date);
 }
