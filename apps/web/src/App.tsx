@@ -3,6 +3,7 @@ import { Calendar } from './components/Calendar';
 import { DayGrid } from './components/DayGrid';
 import { Header } from './components/Header';
 import { HelpDialog } from './components/HelpDialog';
+import { HistoryZoom } from './components/HistoryZoom';
 import { ListsPanel, TabBar } from './components/ListsPanel';
 import { SettingsDialog } from './components/SettingsDialog';
 import { Sidebar } from './components/Sidebar';
@@ -69,6 +70,7 @@ export function App() {
       <SettingsDialog />
       <HelpDialog />
       <Calendar />
+      <HistoryZoom />
     </div>
   );
 }

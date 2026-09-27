@@ -1,0 +1,114 @@
+.history {
+  inset: 0;
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--fg);
+}
+
+.history::backdrop {
+  background: transparent;
+}
+
+.history-close {
+  position: absolute;
+  top: var(--space-2);
+  right: var(--space-4);
+}
+
+.history-track {
+  --axis: 42%;
+  position: absolute;
+  inset: 96px 0 20vh;
+}
+
+.history-axis {
+  position: absolute;
+  top: -96px;
+  bottom: 0;
+  left: var(--axis);
+  width: 1px;
+  background: linear-gradient(transparent, var(--line-strong) 96px);
+  opacity: 0.3;
+}
+
+.history-tick,
+.history-event {
+  position: absolute;
+  top: 0;
+  display: flex;
+  align-items: center;
+  height: 0;
+  white-space: nowrap;
+}
+
+.history-tick {
+  right: calc(100% - var(--axis));
+  gap: var(--space-2);
+  font: 500 var(--text-md) / 1 var(--font-display);
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums;
+  color: var(--fg-muted);
+}
+
+.history-tick-line {
+  height: 1px;
+  background: currentColor;
+}
+
+.history-event {
+  left: var(--axis);
+  gap: var(--space-3);
+}
+
+.history-dot {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  margin-left: -3px;
+  background: var(--fg);
+}
+
+.history-label {
+  font-size: var(--text-sm);
+  opacity: 0;
+  transition: opacity 240ms;
+}
+
+.history-event.is-labeled .history-label {
+  opacity: 1;
+}
+
+.history-when {
+  margin-left: var(--space-1);
+  color: var(--fg-muted);
+}
+
+.history-now .history-dot {
+  background: var(--accent);
+  box-shadow: 0 0 0 4px var(--accent-soft);
+}
+
+.history-year {
+  font: 600 var(--text-2xl) / 1 var(--font-display);
+  letter-spacing: 0.04em;
+  color: var(--accent);
+}
+
+.history-here {
+  font-size: var(--text-xs);
+  font-weight: 700;
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  color: var(--fg-muted);
+}
+
+.app.is-phone .history-track {
+  --axis: 30%;
+}

@@ -6,6 +6,20 @@
   padding: var(--space-2) var(--space-4);
 }
 
+.header-start {
+  min-width: 0;
+}
+
+.holiday {
+  display: block;
+  overflow: hidden;
+  font: 500 var(--text-md) / 1.2 var(--font-display);
+  letter-spacing: 0.04em;
+  color: var(--fg-muted);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
 .header-nav {
   display: flex;
   align-items: center;
@@ -36,6 +50,10 @@
   font: 600 var(--text-lg) / 1 var(--font-display);
   letter-spacing: 0.04em;
   color: var(--fg-muted);
+}
+
+.year:hover {
+  color: var(--accent);
 }
 
 .app.is-phone .header {
