@@ -1,5 +1,4 @@
 ref.png
-agents.md
 PLAN.md
 node_modules/
 dist/
@@ -11,3 +10,4 @@ playwright-report/
 /apps/server/ergon.exe
 *.db
 *.db-*
+skills/

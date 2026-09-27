@@ -83,6 +83,32 @@ describe('Database', () => {
     expect(await db.listTodos()).toEqual([]);
   });
 
+  it('keeps the last change when a write sets a field twice', async () => {
+    const db = await openDb();
+    const undo = await db.write([
+      ...patch('list', 'l', { name: 'first', groupId: 'g' }),
+      ...patch('list', 'l', { name: 'second' }),
+    ]);
+    expect((await db.lists())[0]?.name).toBe('second');
+    expect(undo).toEqual([{ entity: 'list', id: 'l', field: 'deleted', value: true }]);
+  });
+
+  it('undoes edits to several entities in one write', async () => {
+    const db = await openDb();
+    await db.write([...todo('a', today), ...todo('b', today, { order: 'a1' })]);
+    const undo = await db.write([
+      ...patch('todo', 'a', { order: 'a2', text: 'A' }),
+      ...patch('todo', 'b', { order: 'a3' }),
+    ]);
+    await db.write(undo);
+    expect(
+      (await db.todosBetween(today, today, today)).map((t) => [t.id, t.text, t.order]),
+    ).toEqual([
+      ['a', 'a', 'a0'],
+      ['b', 'b', 'a1'],
+    ]);
+  });
+
   it('reads settings with defaults', async () => {
     const db = await openDb();
     expect((await db.settings()).dayCount).toBe(5);
@@ -140,6 +166,10 @@ describe('Database', () => {
     };
     const expected = await snapshot(ops);
     for (let i = 0; i < 5; i++) expect(await snapshot(shuffle(ops, random))).toEqual(expected);
+
+    const batched = await openDb();
+    await batched.apply(shuffle(ops, random));
+    expect(await batched.lists()).toEqual(expected);
   });
 
   it('notifies subscribers with touched entities', async () => {

@@ -51,9 +51,9 @@ export class Database implements Storage {
   write(changes: readonly Change[]): Promise<Change[]> {
     return this.#mutate(async () => {
       await this.#catchUp();
-      const inverse = await this.#inverse(changes);
       const ops = changes.map((change) => ({ ...change, hlc: this.#clock.tick() }) as Op);
-      return [inverse, await this.#merge(ops)];
+      const inverse: Change[] = [];
+      return [inverse, await this.#merge(ops, inverse)];
     });
   }
 
@@ -137,73 +137,97 @@ export class Database implements Storage {
     );
   }
 
-  async #merge(ops: readonly Op[]): Promise<Set<Entity>> {
+  /**
+   * Logs `ops` and materializes the winners, one entity at a time. If `inverse` is given,
+   * the changes that restore the state before `ops` are appended to it.
+   */
+  async #merge(ops: readonly Op[], inverse?: Change[]): Promise<Set<Entity>> {
     const touched = new Set<Entity>();
-    for (const op of ops) {
-      const value = JSON.stringify(op.value);
-      await this.#driver.query(
-        'INSERT OR IGNORE INTO op_log (hlc, entity, id, field, value) VALUES (?, ?, ?, ?, ?)',
-        [op.hlc, op.entity, op.id, op.field, value],
-      );
-      if (!isField(op.entity, op.field)) continue;
-
-      const [current] = await this.#driver.query(
-        'SELECT hlc FROM field_state WHERE entity = ? AND id = ? AND field = ?',
-        [op.entity, op.id, op.field],
-      );
-      if (!wins(op.hlc, current?.hlc as Hlc | undefined)) continue;
+    for (const group of groupByEntity(ops)) {
+      const { entity, id } = group[0]!;
+      const current = await this.#fieldState(entity, id);
+      inverse?.push(...inverseOf(entity, id, group, current));
 
       await this.#driver.query(
-        `INSERT INTO field_state (entity, id, field, value, hlc) VALUES (?, ?, ?, ?, ?)
+        `INSERT OR IGNORE INTO op_log (hlc, entity, id, field, value) VALUES ${placeholders(group.length, 5)}`,
+        group.flatMap((op) => [op.hlc, entity, id, op.field, JSON.stringify(op.value)]),
+      );
+
+      const winners = new Map<string, Op>();
+      for (const op of group) {
+        if (!isField(entity, op.field)) continue;
+        if (wins(op.hlc, winners.get(op.field)?.hlc ?? current.get(op.field)?.hlc)) {
+          winners.set(op.field, op);
+        }
+      }
+      if (winners.size === 0) continue;
+      const won = [...winners.values()];
+
+      await this.#driver.query(
+        `INSERT INTO field_state (entity, id, field, value, hlc) VALUES ${placeholders(won.length, 5)}
          ON CONFLICT (entity, id, field) DO UPDATE SET value = excluded.value, hlc = excluded.hlc`,
-        [op.entity, op.id, op.field, value, op.hlc],
+        won.flatMap((op) => [entity, id, op.field, JSON.stringify(op.value), op.hlc]),
       );
+      const columns = won.map((op) => `"${op.field}"`);
       await this.#driver.query(
-        `INSERT INTO "${op.entity}" (id, "${op.field}") VALUES (?, ?)
-         ON CONFLICT (id) DO UPDATE SET "${op.field}" = excluded."${op.field}"`,
-        [op.id, toSql(op.value)],
+        `INSERT INTO "${entity}" (id, ${columns.join(', ')}) VALUES ${placeholders(1, won.length + 1)}
+         ON CONFLICT (id) DO UPDATE SET ${columns.map((c) => `${c} = excluded.${c}`).join(', ')}`,
+        [id, ...won.map((op) => toSql(op.value))],
       );
-      touched.add(op.entity);
+      touched.add(entity);
     }
     return touched;
   }
 
-  /** Changes restoring the current values; entities that don't exist yet get deleted. */
-  async #inverse(changes: readonly Change[]): Promise<Change[]> {
-    const inverse: Change[] = [];
-    const seen = new Set<string>();
-    const created = new Set<string>();
-    for (const change of changes) {
-      const { entity, id, field } = change;
-      const key = `${entity}\u0000${id}\u0000${field}`;
-      if (seen.has(key)) continue;
-      seen.add(key);
-
-      const [previous] = await this.#driver.query(
-        'SELECT value FROM field_state WHERE entity = ? AND id = ? AND field = ?',
-        [entity, id, field],
-      );
-      if (previous) {
-        inverse.push({ ...change, value: JSON.parse(previous.value as string) as Value });
-        continue;
-      }
-
-      const [exists] = await this.#driver.query(
-        'SELECT 1 FROM field_state WHERE entity = ? AND id = ? LIMIT 1',
-        [entity, id],
-      );
-      if (!exists && isField(entity, 'deleted')) {
-        const entityKey = `${entity}\u0000${id}`;
-        if (!created.has(entityKey)) {
-          created.add(entityKey);
-          inverse.push({ entity, id, field: 'deleted', value: true } as Change);
-        }
-        continue;
-      }
-      inverse.push({ ...change, value: fieldDefault(entity, field) });
-    }
-    return inverse;
+  async #fieldState(entity: Entity, id: string): Promise<Map<string, FieldState>> {
+    const rows = await this.#driver.query(
+      'SELECT field, value, hlc FROM field_state WHERE entity = ? AND id = ?',
+      [entity, id],
+    );
+    return new Map(
+      rows.map((row) => [row.field as string, { value: row.value as string, hlc: row.hlc as Hlc }]),
+    );
   }
+}
+
+interface FieldState {
+  /** JSON-encoded. */
+  value: string;
+  hlc: Hlc;
+}
+
+function groupByEntity(ops: readonly Op[]): Op[][] {
+  const groups = new Map<string, Op[]>();
+  for (const op of ops) {
+    const key = `${op.entity}\u0000${op.id}`;
+    const group = groups.get(key);
+    if (group) group.push(op);
+    else groups.set(key, [op]);
+  }
+  return [...groups.values()];
+}
+
+function placeholders(rows: number, columns: number): string {
+  const row = `(${Array.from({ length: columns }, () => '?').join(', ')})`;
+  return Array.from({ length: rows }, () => row).join(', ');
+}
+
+/** Changes restoring `current`; entities that don't exist yet get deleted. */
+function inverseOf(
+  entity: Entity,
+  id: string,
+  ops: readonly Op[],
+  current: ReadonlyMap<string, FieldState>,
+): Change[] {
+  if (current.size === 0 && isField(entity, 'deleted')) {
+    return [{ entity, id, field: 'deleted', value: true } as Change];
+  }
+  const fields = new Set(ops.map((op) => op.field).filter((field) => isField(entity, field)));
+  return [...fields].map((field) => {
+    const previous = current.get(field);
+    const value = previous ? (JSON.parse(previous.value) as Value) : fieldDefault(entity, field);
+    return { entity, id, field, value } as Change;
+  });
 }
 
 function toSql(value: Value): SqlValue {
