@@ -1,0 +1,16 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["typescript", "unicorn", "oxc", "import"],
+  "categories": {
+    "correctness": "error",
+    "suspicious": "warn"
+  },
+  "rules": {
+    "import/no-unassigned-import": ["warn", { "allow": ["**/*.css", "@fontsource/**"] }],
+    "unicorn/require-post-message-target-origin": "off",
+    "unicorn/consistent-function-scoping": "off",
+    "no-shadow": "off"
+  },
+  "overrides": [{ "files": ["**/*.tsx"], "rules": { "no-unassigned-vars": "off" } }],
+  "ignorePatterns": ["**/dist/**", "**/playwright-report/**", "**/test-results/**"]
+}

@@ -1,0 +1,47 @@
+.footer {
+  position: sticky;
+  bottom: 0;
+  z-index: 10;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  padding: var(--space-1) var(--space-4);
+  border-top: 1px solid var(--line);
+  background: var(--bg);
+}
+
+.footer-side {
+  display: flex;
+  gap: var(--space-1);
+}
+
+.footer-end {
+  justify-content: flex-end;
+}
+
+.footer-center {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.day-count {
+  display: flex;
+}
+
+.day-count button {
+  min-width: 28px;
+  height: 28px;
+  font-weight: 600;
+  font-size: var(--text-sm);
+  color: var(--fg-muted);
+}
+
+.day-count button:hover {
+  color: var(--fg);
+}
+
+.day-count button[aria-pressed='true'] {
+  background: var(--fg);
+  color: var(--bg);
+}

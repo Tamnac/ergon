@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Ergon</title>
+    <script>
+      // Apply the last known theme before the database loads to avoid a flash.
+      try {
+        const appearance = JSON.parse(localStorage.getItem('ergon.appearance'));
+        if (appearance) {
+          const root = document.documentElement;
+          if (appearance.theme !== 'system') root.dataset.theme = appearance.theme;
+          root.style.setProperty('--accent', appearance.accent);
+          root.style.setProperty('--accent-fg', appearance.accentFg);
+        }
+      } catch {}
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

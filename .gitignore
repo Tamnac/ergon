@@ -1,0 +1,13 @@
+ref.png
+agents.md
+PLAN.md
+node_modules/
+dist/
+coverage/
+test-results/
+playwright-report/
+*.tsbuildinfo
+/apps/server/ergon
+/apps/server/ergon.exe
+*.db
+*.db-*

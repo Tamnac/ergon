@@ -1,0 +1,30 @@
+.menu {
+  position: fixed;
+  inset: auto;
+  margin: 0;
+  min-width: 160px;
+  padding: var(--space-1) 0;
+  border: 1px solid var(--line-strong);
+  background: var(--bg);
+  color: var(--fg);
+  box-shadow: 4px 4px 0 var(--accent);
+}
+
+.menu-item {
+  display: block;
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  text-align: left;
+  font-size: var(--text-sm);
+}
+
+.menu-item:hover:not(:disabled),
+.menu-item:focus-visible {
+  background: var(--accent);
+  color: var(--accent-fg);
+  outline: none;
+}
+
+.menu-item:disabled {
+  color: var(--fg-muted);
+}

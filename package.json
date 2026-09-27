@@ -1,0 +1,24 @@
+{
+  "name": "ergon",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@12.6.0",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "dev": "pnpm --filter @ergon/web dev",
+    "build": "pnpm --filter @ergon/web build",
+    "test": "vitest run",
+    "e2e": "pnpm --filter @ergon/web e2e",
+    "lint": "oxlint --deny-warnings && prettier --check . && pnpm -r typecheck",
+    "format": "prettier --write ."
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.3",
+    "oxlint": "^1.85.0",
+    "prettier": "^3.9.9",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.2"
+  }
+}

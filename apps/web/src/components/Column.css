@@ -1,0 +1,173 @@
+.column {
+  min-width: 0;
+}
+
+.todo-list {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.todo-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--row);
+  padding: 3px var(--space-2);
+  border-bottom: 1px solid var(--line);
+  font-size: var(--text-sm);
+  line-height: 1.35;
+}
+
+.todo-filler {
+  cursor: text;
+}
+
+.todo-add-button {
+  position: absolute;
+  inset: 0;
+}
+
+.todo-add-button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.todo {
+  user-select: none;
+  cursor: grab;
+}
+
+.todo:hover {
+  background: var(--hover);
+}
+
+.todo:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.todo.is-editing {
+  background: var(--accent-soft);
+}
+
+.todo-text {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  cursor: text;
+}
+
+.todo-text a {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: var(--accent);
+  text-underline-offset: 2px;
+}
+
+.todo.is-done .todo-label {
+  text-decoration: line-through;
+  color: var(--fg-muted);
+}
+
+.todo.is-done.is-completing .todo-label {
+  text-decoration: none;
+}
+
+.todo-check {
+  position: absolute;
+  left: -22px;
+  display: grid;
+  place-items: center;
+  width: 14px;
+  height: 14px;
+  border: 1.5px solid var(--fg-muted);
+  color: transparent;
+  opacity: 0;
+}
+
+.todo-check .icon {
+  width: 12px;
+  height: 12px;
+}
+
+.todo-check[aria-pressed='true'] {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--accent-fg);
+}
+
+.todo-delete {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  opacity: 0;
+}
+
+.todo:is(:hover, :focus-within) :is(.todo-check, .todo-delete) {
+  opacity: 1;
+}
+
+.todo-check:hover {
+  border-color: var(--accent);
+}
+
+@media (hover: none) {
+  .todo-check,
+  .todo-delete {
+    opacity: 1;
+  }
+}
+
+.todo.is-heading {
+  margin-top: 2px;
+  border-bottom-color: transparent;
+  background: var(--heading-bg);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+}
+
+.todo.is-dragging {
+  opacity: 0.3;
+}
+
+.drag-ghost {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 50;
+  pointer-events: none;
+  background: var(--bg);
+  box-shadow:
+    0 0 0 1px var(--line-strong),
+    4px 4px 0 var(--accent);
+  cursor: grabbing;
+}
+
+.drop-indicator {
+  position: fixed;
+  z-index: 49;
+  height: 3px;
+  background: var(--accent);
+  pointer-events: none;
+}
+
+.inline-input {
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  outline: none;
+}
+
+.todo-add {
+  background: var(--accent-soft);
+}

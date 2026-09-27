@@ -1,0 +1,39 @@
+.day-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--columns), minmax(var(--column-min), 1fr));
+  grid-template-rows: auto auto;
+  gap: var(--space-6) var(--space-8);
+  padding: var(--space-6) var(--space-8) var(--space-8);
+  overflow-x: auto;
+}
+
+.day-header {
+  display: grid;
+  gap: var(--space-1);
+  padding: 0 var(--space-2) var(--space-3);
+}
+
+.day-date {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  color: var(--fg-muted);
+}
+
+.day-name {
+  margin: 0;
+  font: 600 var(--text-2xl) / 1 var(--font-display);
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.day-header.is-today .day-name {
+  color: var(--accent);
+}
+
+.day-header.is-past .day-name {
+  color: var(--fg-muted);
+}
