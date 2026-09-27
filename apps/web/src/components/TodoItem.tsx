@@ -48,6 +48,8 @@ export function TodoItem(props: { todo: Todo; columnKey: string }) {
 
   const onKeyDown = (event: KeyboardEvent) => {
     if (event.target !== item || event.ctrlKey || event.metaKey || event.altKey) return;
+    const navigating = event.key === 'ArrowUp' || event.key === 'ArrowDown';
+    if (event.repeat && !navigating) return;
     switch (event.key) {
       case 'ArrowUp':
         focusSibling(false);
