@@ -5,6 +5,8 @@ import { Header } from './components/Header';
 import { HelpDialog } from './components/HelpDialog';
 import { HistoryZoom } from './components/HistoryZoom';
 import { ListsPanel, TabBar } from './components/ListsPanel';
+import { RepeatDialog } from './components/RepeatDialog';
+import { ScopeDialog } from './components/ScopeDialog';
 import { SettingsDialog } from './components/SettingsDialog';
 import { Sidebar } from './components/Sidebar';
 import { readableOn } from './lib/color';
@@ -69,6 +71,8 @@ export function App() {
       <div class="effect-layer" ref={setEffectLayer} />
       <SettingsDialog />
       <HelpDialog />
+      <RepeatDialog />
+      <ScopeDialog />
       <Calendar />
       <HistoryZoom />
     </div>

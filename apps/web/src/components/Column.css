@@ -124,14 +124,21 @@
   color: var(--accent-fg);
 }
 
-.todo-delete {
+.todo-delete,
+.todo-repeat {
   flex: none;
   width: 20px;
   height: 20px;
   opacity: 0;
 }
 
-.todo:is(:hover, :focus-within) :is(.todo-check, .todo-delete) {
+.todo-repeat .icon {
+  width: 13px;
+  height: 13px;
+}
+
+.todo-repeat.is-on,
+.todo:is(:hover, :focus-within) :is(.todo-check, .todo-delete, .todo-repeat) {
   opacity: 1;
 }
 
@@ -141,7 +148,8 @@
 
 @media (hover: none) {
   .todo-check,
-  .todo-delete {
+  .todo-delete,
+  .todo-repeat {
     opacity: 1;
   }
 }

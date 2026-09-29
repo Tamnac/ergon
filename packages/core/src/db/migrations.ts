@@ -58,6 +58,22 @@ export const migrations: readonly string[] = [
     "condensedWeekends" INTEGER
   );
   `,
+  `
+  ALTER TABLE todo ADD COLUMN "recurrenceId" TEXT;
+  ALTER TABLE todo ADD COLUMN occurrence TEXT;
+  ALTER TABLE todo ADD COLUMN skipped INTEGER NOT NULL DEFAULT 0;
+  CREATE INDEX todo_occurrence ON todo (occurrence, "recurrenceId") WHERE deleted = 0;
+
+  CREATE TABLE recurrence (
+    id TEXT PRIMARY KEY,
+    rrule TEXT NOT NULL DEFAULT '',
+    "startDate" TEXT NOT NULL DEFAULT '',
+    text TEXT NOT NULL DEFAULT '',
+    kind TEXT NOT NULL DEFAULT 'todo',
+    "order" TEXT NOT NULL DEFAULT '',
+    deleted INTEGER NOT NULL DEFAULT 0
+  );
+  `,
 ];
 
 export async function migrate(driver: SqlDriver): Promise<void> {

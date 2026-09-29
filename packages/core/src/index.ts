@@ -3,6 +3,7 @@ export * from './hlc';
 export * from './merge';
 export * from './model';
 export * from './order';
+export * from './recurrence';
 export * from './rollover';
 export * from './storage';
 export * from './db/database';

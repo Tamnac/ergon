@@ -23,6 +23,7 @@ export const shortcuts: [keys: string, action: string][] = [
   ['Space', 'Complete focused todo'],
   ['> / <', 'Move focused todo to next / previous day'],
   ['Delete', 'Delete focused todo'],
+  ['R', 'Repeat focused todo'],
   ['? / Ctrl + /', 'Show shortcuts'],
 ];
 

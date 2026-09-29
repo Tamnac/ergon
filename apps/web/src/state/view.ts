@@ -30,6 +30,8 @@ export const [focusRequest, setFocusRequest] = createSignal<{ id: string; key: s
 );
 export const [settingsOpen, setSettingsOpen] = createSignal(false);
 export const [helpOpen, setHelpOpen] = createSignal(false);
+/** Todo whose repetition is being edited. */
+export const [repeating, setRepeating] = createSignal<Todo | null>(null);
 /** What the phone layout shows. */
 export const [mobileView, setMobileView] = persistedSignal<'days' | 'lists'>(
   'ergon.mobileView',
@@ -60,7 +62,7 @@ export const { columns, visibleDays, requestedDays, todosByDate } = createRoot((
   const requestedDays = createMemo(() => requested().flat());
   // Days switch together with their todos, so columns never show up empty while loading.
   const [days] = createQuery<{ columns: DateStr[][]; todos: Todo[] }>(
-    ['todo'],
+    ['todo', 'recurrence'],
     async () => {
       const columns = requested();
       const todos = await storage.todosBetween(columns[0]![0]!, columns.at(-1)!.at(-1)!, today());

@@ -43,6 +43,10 @@ export function addMonths(date: DateStr, months: number): DateStr {
   return fromUtc(new Date(Date.UTC(year, month, Math.min(d!, last))));
 }
 
+export function daysBetween(from: DateStr, to: DateStr): number {
+  return Math.round((parseDate(to).getTime() - parseDate(from).getTime()) / DAY_MS);
+}
+
 /** 0 = Sunday … 6 = Saturday */
 export function weekday(date: DateStr): number {
   return parseDate(date).getUTCDay();

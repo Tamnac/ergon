@@ -1,6 +1,8 @@
 import type { DateStr } from '../date';
 import { Clock, randomNode, type Hlc } from '../hlc';
 import { wins } from '../merge';
+import { compareOrder, type Ordered } from '../order';
+import { occurrenceId, virtualOccurrences } from '../recurrence';
 import {
   SETTINGS_ID,
   defaults,
@@ -11,6 +13,7 @@ import {
   type List,
   type ListGroup,
   type Op,
+  type Recurrence,
   type Rows,
   type Settings,
   type Todo,
@@ -67,37 +70,81 @@ export class Database implements Storage {
 
   todosBetween(from: DateStr, to: DateStr, today: DateStr): Promise<Todo[]> {
     const rollover = from <= today && today <= to;
-    return this.#select(
-      'todo',
-      `SELECT * FROM todo WHERE deleted = 0 AND (date BETWEEN ? AND ?${rollover ? ' OR (done = 0 AND date < ?)' : ''}) ORDER BY "order", id`,
-      rollover ? [from, to, today] : [from, to],
-    );
+    return this.#serial(async () => {
+      const rows = await this.#rows(
+        'todo',
+        `SELECT * FROM todo WHERE deleted = 0 AND skipped = 0
+         AND (date BETWEEN ? AND ?${rollover ? ` OR (${ROLLS_OVER})` : ''})`,
+        rollover ? [from, to, today] : [from, to],
+      );
+      return [...rows, ...(await this.#virtualTodos(from, to))].toSorted(compareOrder);
+    });
   }
 
-  async todoMarks(from: DateStr, to: DateStr, today: DateStr): Promise<TodoMark[]> {
-    const rows = await this.#serial(() =>
-      this.#driver.query(
-        `SELECT id, day, done, length(text) AS length FROM (
-           SELECT *, CASE WHEN done = 0 AND date < ? THEN ? ELSE date END AS day FROM todo
-           WHERE deleted = 0 AND kind = 'todo' AND (date BETWEEN ? AND ? OR (done = 0 AND date < ?))
-         ) WHERE day BETWEEN ? AND ? ORDER BY day, "order", id`,
+  todoMarks(from: DateStr, to: DateStr, today: DateStr): Promise<TodoMark[]> {
+    return this.#serial(async () => {
+      const rows = await this.#driver.query(
+        `SELECT id, day, done, "order", length(text) AS length FROM (
+           SELECT *, CASE WHEN ${ROLLS_OVER} THEN ? ELSE date END AS day FROM todo
+           WHERE deleted = 0 AND skipped = 0 AND kind = 'todo'
+           AND (date BETWEEN ? AND ? OR (${ROLLS_OVER}))
+         ) WHERE day BETWEEN ? AND ?`,
         [today, today, from, to, today, from, to],
-      ),
-    );
-    return rows.map((row) => ({
-      id: row.id as string,
-      date: row.day as DateStr,
-      done: Number(row.done) === 1,
-      length: Number(row.length),
-    }));
+      );
+      const marks: (TodoMark & Ordered)[] = rows.map((row) => ({
+        id: row.id as string,
+        date: row.day as DateStr,
+        done: Number(row.done) === 1,
+        length: Number(row.length),
+        order: row.order as string,
+      }));
+      for (const todo of await this.#virtualTodos(from, to)) {
+        if (todo.kind !== 'todo') continue;
+        const { id, date, order, text } = todo;
+        marks.push({ id, date: date!, done: false, length: text.length, order });
+      }
+      return marks
+        .toSorted((a, b) => (a.date !== b.date ? (a.date < b.date ? -1 : 1) : compareOrder(a, b)))
+        .map(({ id, date, done, length }) => ({ id, date, done, length }));
+    });
   }
 
   listTodos(): Promise<Todo[]> {
     return this.#select(
       'todo',
-      `SELECT * FROM todo WHERE deleted = 0
+      `SELECT * FROM todo WHERE deleted = 0 AND skipped = 0
        AND "listId" IN (SELECT id FROM list WHERE deleted = 0) ORDER BY "order", id`,
     );
+  }
+
+  recurrences(): Promise<Recurrence[]> {
+    return this.#select('recurrence', 'SELECT * FROM recurrence WHERE deleted = 0 ORDER BY id');
+  }
+
+  seriesTodos(recurrenceId: string): Promise<Todo[]> {
+    return this.#select(
+      'todo',
+      'SELECT * FROM todo WHERE deleted = 0 AND "recurrenceId" = ? ORDER BY occurrence, id',
+      [recurrenceId],
+    );
+  }
+
+  async #virtualTodos(from: DateStr, to: DateStr): Promise<Todo[]> {
+    const recurrences = await this.#rows(
+      'recurrence',
+      'SELECT * FROM recurrence WHERE deleted = 0 AND "startDate" <= ?',
+      [to],
+    );
+    if (recurrences.length === 0) return [];
+    const stored = await this.#driver.query(
+      `SELECT "recurrenceId", occurrence FROM todo
+       WHERE deleted = 0 AND occurrence BETWEEN ? AND ? AND "recurrenceId" IS NOT NULL`,
+      [from, to],
+    );
+    const ids = stored.map((row) =>
+      occurrenceId(row.recurrenceId as string, row.occurrence as string),
+    );
+    return virtualOccurrences(recurrences, from, to, new Set(ids));
   }
 
   lists(): Promise<List[]> {
@@ -150,9 +197,15 @@ export class Database implements Storage {
     sql: string,
     params: readonly SqlValue[] = [],
   ): Promise<Rows[E][]> {
-    return this.#serial(async () =>
-      (await this.#driver.query(sql, params)).map((row) => fromRow(entity, row)),
-    );
+    return this.#serial(() => this.#rows(entity, sql, params));
+  }
+
+  async #rows<E extends Entity>(
+    entity: E,
+    sql: string,
+    params: readonly SqlValue[] = [],
+  ): Promise<Rows[E][]> {
+    return (await this.#driver.query(sql, params)).map((row) => fromRow(entity, row));
   }
 
   /**
@@ -207,6 +260,9 @@ export class Database implements Storage {
     );
   }
 }
+
+/** SQL condition for todos that show on today instead of their date; binds `today`. */
+const ROLLS_OVER = 'done = 0 AND date < ? AND "recurrenceId" IS NULL';
 
 interface FieldState {
   /** JSON-encoded. */

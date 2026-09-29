@@ -4,6 +4,7 @@ import {
   localeWeekStart,
   type List,
   type ListGroup,
+  type Recurrence,
   type Settings,
   type Todo,
 } from '@ergon/core';
@@ -11,26 +12,40 @@ import { createMemo, createRoot } from 'solid-js';
 import { createQuery } from './query';
 import { storage } from './storage';
 
-export const { settings, settingsReady, groups, groupsReady, lists, listTodos, todosByList } =
-  createRoot(() => {
-    const [settings, settingsReady] = createQuery<Settings>(
-      ['settings'],
-      () => storage.settings(),
-      {
-        id: SETTINGS_ID,
-        ...defaults.settings,
-      },
-    );
-    const [groups, groupsReady] = createQuery<ListGroup[]>(
-      ['listGroup'],
-      () => storage.listGroups(),
-      [],
-    );
-    const [lists] = createQuery<List[]>(['list'], () => storage.lists(), []);
-    const [listTodos] = createQuery<Todo[]>(['todo'], () => storage.listTodos(), []);
-    const todosByList = createMemo(() => groupBy(listTodos, (todo) => todo.listId));
-    return { settings, settingsReady, groups, groupsReady, lists, listTodos, todosByList };
+export const {
+  settings,
+  settingsReady,
+  groups,
+  groupsReady,
+  lists,
+  listTodos,
+  todosByList,
+  recurrences,
+} = createRoot(() => {
+  const [settings, settingsReady] = createQuery<Settings>(['settings'], () => storage.settings(), {
+    id: SETTINGS_ID,
+    ...defaults.settings,
   });
+  const [groups, groupsReady] = createQuery<ListGroup[]>(
+    ['listGroup'],
+    () => storage.listGroups(),
+    [],
+  );
+  const [lists] = createQuery<List[]>(['list'], () => storage.lists(), []);
+  const [listTodos] = createQuery<Todo[]>(['todo'], () => storage.listTodos(), []);
+  const todosByList = createMemo(() => groupBy(listTodos, (todo) => todo.listId));
+  const [recurrences] = createQuery<Recurrence[]>(['recurrence'], () => storage.recurrences(), []);
+  return {
+    settings,
+    settingsReady,
+    groups,
+    groupsReady,
+    lists,
+    listTodos,
+    todosByList,
+    recurrences,
+  };
+});
 
 export const weekStart = () => settings.weekStart ?? localeWeekStart();
 

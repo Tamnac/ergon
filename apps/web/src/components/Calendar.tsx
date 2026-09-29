@@ -149,7 +149,7 @@ function Month(props: { onPick: (date: DateStr) => void; onClose: () => void }) 
     return Array.from({ length: 42 }, (_, i) => addDays(first, i));
   });
   const [marks] = createQuery<TodoMark[]>(
-    ['todo'],
+    ['todo', 'recurrence'],
     () => storage.todoMarks(days()[0]!, days().at(-1)!, today()),
     [],
   );

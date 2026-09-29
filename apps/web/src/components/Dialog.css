@@ -114,7 +114,8 @@ legend.field-label {
   background: none;
 }
 
-.select {
+.select,
+.input {
   width: fit-content;
   padding: var(--space-1) var(--space-2);
   border: 1px solid var(--line-strong);
@@ -122,6 +123,62 @@ legend.field-label {
   color: var(--fg);
   font: inherit;
   font-size: var(--text-sm);
+}
+
+.input {
+  width: 100%;
+}
+
+.input-number {
+  width: 5em;
+}
+
+.field-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+}
+
+.button {
+  padding: var(--space-2) var(--space-4);
+  border: 1px solid var(--line-strong);
+  font-size: var(--text-sm);
+}
+
+.button:hover:not(:disabled) {
+  background: var(--hover);
+}
+
+.button:disabled {
+  opacity: 0.5;
+}
+
+.button-primary,
+.button-primary:hover:not(:disabled) {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--accent-fg);
+}
+
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+.scope-choices {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.repeat-form {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.repeat-error {
+  color: var(--fg);
 }
 
 .checkbox {

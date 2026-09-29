@@ -18,6 +18,8 @@ const paths = {
   help: 'M6 6a2 2 0 1 1 3 1.7c-.6.4-1 .8-1 1.5V10M8 12.5v.01',
   close: 'M4 4l8 8M12 4l-8 8',
   check: 'M3 8.5l3 3 7-7',
+  repeat:
+    'M2.5 7.5v-1a2 2 0 0 1 2-2h9M11 2l2.5 2.5L11 7M13.5 8.5v1a2 2 0 0 1-2 2h-9M5 9l-2.5 2.5L5 14',
 } as const;
 
 export type IconName = keyof typeof paths;

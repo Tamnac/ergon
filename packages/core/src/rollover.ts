@@ -1,17 +1,19 @@
 import type { DateStr } from './date';
-import { patch, type Change, type Todo } from './model';
+import type { Change, Todo } from './model';
+import { todoChanges } from './recurrence';
 
-/** Day a todo shows on: undone todos from the past roll over to today. */
-export function effectiveDate(todo: Pick<Todo, 'date' | 'done'>, today: DateStr): DateStr | null {
-  return todo.date !== null && !todo.done && todo.date < today ? today : todo.date;
+/** Day a todo shows on: undone non-recurring todos from the past roll over to today. */
+export function effectiveDate(
+  todo: Pick<Todo, 'date' | 'done' | 'recurrenceId'>,
+  today: DateStr,
+): DateStr | null {
+  return todo.date !== null && !todo.done && todo.recurrenceId === null && todo.date < today
+    ? today
+    : todo.date;
 }
 
 /** Completing a rolled-over todo moves it to today so it stays where it was completed. */
-export function completionChanges(
-  todo: Pick<Todo, 'id' | 'date'>,
-  done: boolean,
-  today: DateStr,
-): Change[] {
-  const moved = done && todo.date !== null && todo.date < today;
-  return patch('todo', todo.id, moved ? { done, date: today } : { done });
+export function completionChanges(todo: Todo, done: boolean, today: DateStr): Change[] {
+  const moved = done && effectiveDate({ ...todo, done: false }, today) !== todo.date;
+  return todoChanges(todo, moved ? { done, date: today } : { done });
 }

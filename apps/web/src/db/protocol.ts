@@ -5,6 +5,8 @@ export const methods = [
   'todosBetween',
   'todoMarks',
   'listTodos',
+  'recurrences',
+  'seriesTodos',
   'lists',
   'listGroups',
   'settings',

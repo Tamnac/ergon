@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { Database, formatHlc, migrate, patch, SETTINGS_ID, type Op } from '../src';
+import {
+  Database,
+  formatHlc,
+  migrate,
+  migrations,
+  patch,
+  SETTINGS_ID,
+  todoChanges,
+  type Op,
+} from '../src';
 import { rng, shuffle } from './random';
 import { memoryDriver } from './sqlite';
 
@@ -26,6 +35,9 @@ describe('Database', () => {
         listId: null,
         order: 'a0',
         kind: 'todo',
+        recurrenceId: null,
+        occurrence: null,
+        skipped: false,
         deleted: false,
       },
     ]);
@@ -219,6 +231,97 @@ describe('Database', () => {
     const driver = memoryDriver();
     await migrate(driver);
     await migrate(driver);
-    expect(await driver.query('PRAGMA user_version')).toEqual([{ user_version: 1 }]);
+    expect(await driver.query('PRAGMA user_version')).toEqual([
+      { user_version: migrations.length },
+    ]);
+  });
+});
+
+describe('Database recurrences', () => {
+  const tomorrow = '2026-09-27';
+
+  async function openWithSeries(extra: Record<string, unknown> = {}) {
+    const db = await openDb();
+    await db.write(
+      patch('recurrence', 'r', {
+        rrule: 'FREQ=DAILY',
+        startDate: '2026-09-25',
+        text: 'Water plants',
+        order: 'a5',
+        ...extra,
+      }),
+    );
+    return db;
+  }
+
+  const ids = async (db: Database, from = today, to = tomorrow) =>
+    (await db.todosBetween(from, to, today)).map((t) => t.id);
+
+  it('adds virtual occurrences in order', async () => {
+    const db = await openWithSeries();
+    await db.write([...todo('a', today), ...todo('b', today, { order: 'a9' })]);
+    expect(await ids(db)).toEqual(['a', 'r:2026-09-26', 'r:2026-09-27', 'b']);
+    const [, occurrence] = await db.todosBetween(today, today, today);
+    expect(occurrence).toMatchObject({
+      text: 'Water plants',
+      date: today,
+      recurrenceId: 'r',
+      occurrence: today,
+      virtual: true,
+    });
+  });
+
+  it('does not roll occurrences over', async () => {
+    const db = await openWithSeries();
+    expect(await ids(db, today, today)).toEqual(['r:2026-09-26']);
+    const [past] = await db.todosBetween('2026-09-25', '2026-09-25', today);
+    await db.write(todoChanges(past!, { text: 'stored' }));
+    expect(await ids(db, today, today)).toEqual(['r:2026-09-26']);
+  });
+
+  it('replaces virtual occurrences by stored ones', async () => {
+    const db = await openWithSeries();
+    const [first, second] = await db.todosBetween(today, tomorrow, today);
+    await db.write(todoChanges(first!, { date: '2026-09-28' }));
+    await db.write(todoChanges(second!, { skipped: true }));
+    expect(await ids(db)).toEqual([]);
+    expect(await ids(db, '2026-09-28', '2026-09-28')).toEqual(['r:2026-09-26', 'r:2026-09-28']);
+    expect((await db.seriesTodos('r')).map((t) => t.id)).toEqual(['r:2026-09-26', 'r:2026-09-27']);
+  });
+
+  it('brings a virtual occurrence back when its storing is undone', async () => {
+    const db = await openWithSeries();
+    const [occurrence] = await db.todosBetween(today, today, today);
+    const undo = await db.write(todoChanges(occurrence!, { text: 'Edited' }));
+    const [stored] = await db.todosBetween(today, today, today);
+    expect(stored).toMatchObject({ text: 'Edited' });
+    expect(stored?.virtual).toBeUndefined();
+    await db.write(undo);
+    expect(await db.todosBetween(today, today, today)).toEqual([occurrence]);
+  });
+
+  it('keeps a converted todo as the first occurrence', async () => {
+    const db = await openWithSeries({ startDate: today });
+    await db.write(todo('a', today, { recurrenceId: 'r', occurrence: today }));
+    expect(await ids(db)).toEqual(['a', 'r:2026-09-27']);
+  });
+
+  it('adds occurrences to todo marks', async () => {
+    const db = await openWithSeries();
+    await db.write(
+      patch('recurrence', 'h', { rrule: 'FREQ=DAILY', startDate: today, kind: 'heading' }),
+    );
+    expect(await db.todoMarks(today, tomorrow, today)).toEqual([
+      { id: 'r:2026-09-26', date: today, done: false, length: 12 },
+      { id: 'r:2026-09-27', date: tomorrow, done: false, length: 12 },
+    ]);
+  });
+
+  it('ignores deleted recurrences', async () => {
+    const db = await openWithSeries();
+    expect(await db.recurrences()).toHaveLength(1);
+    await db.write(patch('recurrence', 'r', { deleted: true }));
+    expect(await db.recurrences()).toEqual([]);
+    expect(await ids(db)).toEqual([]);
   });
 });

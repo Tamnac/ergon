@@ -3,10 +3,17 @@ import { For, Show, createEffect, onMount } from 'solid-js';
 import { makeDraggable } from '../lib/dnd';
 import { cancelCompletion, isCompleting, playCompletion } from '../lib/effects';
 import { linkify } from '../lib/links';
-import { deleteTodo, editTodo, moveByDays, moveTodo, setDone } from '../state/actions';
-import { editingId, focusRequest, setEditingId, setFocusRequest } from '../state/view';
+import { deleteTodo, editTodo, moveByDays, moveTodo, parseEntry, setDone } from '../state/actions';
+import {
+  editingId,
+  focusRequest,
+  setEditingId,
+  setFocusRequest,
+  setRepeating,
+} from '../state/view';
 import { Icon } from './Icon';
 import { InlineInput } from './InlineInput';
+import { askScope } from './ScopeDialog';
 
 export function TodoItem(props: { todo: Todo; columnKey: string }) {
   let item!: HTMLLIElement;
@@ -14,6 +21,8 @@ export function TodoItem(props: { todo: Todo; columnKey: string }) {
 
   const editing = () => editingId() === props.todo.id;
   const heading = () => props.todo.kind === 'heading';
+  const recurring = () => props.todo.recurrenceId !== null;
+  const onDay = () => props.todo.date !== null;
 
   onMount(() =>
     makeDraggable(item, {
@@ -36,6 +45,30 @@ export function TodoItem(props: { todo: Todo; columnKey: string }) {
     void setDone(props.todo, done);
     if (done && label) void playCompletion(props.todo.id, label);
     else cancelCompletion(props.todo.id);
+  };
+
+  /** Deletes the todo, asking which occurrences if it repeats; `before` runs once confirmed. */
+  const remove = async (before?: () => void) => {
+    const todo = props.todo;
+    const scope =
+      todo.recurrenceId === null
+        ? 'this'
+        : await askScope('Delete repeating todo', ['this', 'following'] as const);
+    if (!scope) return;
+    before?.();
+    await deleteTodo(todo, scope);
+  };
+
+  const save = async (value: string) => {
+    const todo = props.todo;
+    const entry = parseEntry(value);
+    if (!entry.text) return remove();
+    if (entry.text === todo.text && entry.kind === todo.kind) return;
+    const scope =
+      todo.recurrenceId === null
+        ? 'this'
+        : await askScope('Edit repeating todo', ['this', 'following', 'all'] as const);
+    if (scope) await editTodo(todo, value, scope);
   };
 
   const focusSibling = (forward: boolean) => {
@@ -65,8 +98,11 @@ export function TodoItem(props: { todo: Todo; columnKey: string }) {
         break;
       case 'Delete':
       case 'Backspace':
-        focusSibling(true);
-        void deleteTodo(props.todo);
+        void remove(() => focusSibling(true));
+        break;
+      case 'r':
+        if (!onDay()) return;
+        setRepeating(props.todo);
         break;
       case '>':
         void moveByDays(props.todo, 1);
@@ -128,12 +164,25 @@ export function TodoItem(props: { todo: Todo; columnKey: string }) {
                 </For>
               </span>
             </span>
+            <Show when={onDay()}>
+              <button
+                type="button"
+                class="todo-repeat icon-button"
+                classList={{ 'is-on': recurring() }}
+                tabIndex={-1}
+                aria-label="Repeat"
+                title={recurring() ? 'Repeats' : 'Repeat'}
+                onClick={() => setRepeating(props.todo)}
+              >
+                <Icon name="repeat" />
+              </button>
+            </Show>
             <button
               type="button"
               class="todo-delete icon-button"
               tabIndex={-1}
               aria-label="Delete"
-              onClick={() => void deleteTodo(props.todo)}
+              onClick={() => void remove()}
             >
               <Icon name="minus" />
             </button>
@@ -144,9 +193,10 @@ export function TodoItem(props: { todo: Todo; columnKey: string }) {
           label="Edit todo"
           value={heading() ? `# ${props.todo.text}` : props.todo.text}
           onCommit={(value, reason) => {
-            void editTodo(props.todo, value);
             setEditingId(null);
-            if (reason === 'enter') focusSelf();
+            void save(value).then(() => {
+              if (reason === 'enter') focusSelf();
+            });
           }}
           onCancel={() => {
             setEditingId(null);

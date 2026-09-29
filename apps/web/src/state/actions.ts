@@ -4,14 +4,23 @@ import {
   compareOrder,
   completionChanges,
   effectiveDate,
+  formatRule,
   newId,
+  occurrences,
   orderAt,
+  parseRule,
   patch,
+  splitRule,
+  todoChanges,
+  tryParseRule,
   type Change,
+  type DateStr,
   type Fields,
   type List,
   type ListGroup,
   type Ordered,
+  type Recurrence,
+  type Rule,
   type Todo,
 } from '@ergon/core';
 import { createSignal } from 'solid-js';
@@ -53,8 +62,13 @@ export function undo() {
   });
 }
 
-const reorder = (entity: 'todo' | 'list' | 'listGroup', items: Ordered[]) =>
+const reorder = (entity: 'list' | 'listGroup', items: Ordered[]) =>
   items.flatMap((item) => patch(entity, item.id, { order: item.order }));
+
+function reorderTodos(siblings: readonly Todo[], rekeyed: Ordered[]) {
+  const byId = new Map(siblings.map((todo) => [todo.id, todo]));
+  return rekeyed.flatMap(({ id, order }) => todoChanges(byId.get(id)!, { order }));
+}
 
 const placeOf = (todo: Todo): Target =>
   todo.listId !== null ? { listId: todo.listId } : { date: effectiveDate(todo, today())! };
@@ -71,7 +85,7 @@ async function todosIn(target: Target): Promise<Todo[]> {
   return day.filter((t) => effectiveDate(t, today()) === target.date).toSorted(compareOrder);
 }
 
-function parseEntry(input: string): Pick<Todo, 'text' | 'kind'> {
+export function parseEntry(input: string): Pick<Todo, 'text' | 'kind'> {
   const heading = /^#\s*(.*)$/.exec(input.trim());
   return heading
     ? { text: heading[1]!.trim(), kind: 'heading' }
@@ -89,17 +103,101 @@ export function addTodo(target: Target, input: string) {
         order,
         done: false,
       }),
-      ...reorder('todo', rekeyed),
+      ...reorderTodos(siblings, rekeyed),
     ]);
   });
 }
 
-export function editTodo(todo: Todo, input: string) {
+/** Which occurrences of a recurring todo an edit applies to. */
+export type Scope = 'this' | 'following' | 'all';
+
+interface Series {
+  recurrence: Recurrence;
+  rule: Rule;
+  /** Stored occurrences. */
+  todos: Todo[];
+  /** The occurrence being edited. */
+  at: DateStr;
+}
+
+async function seriesOf(todo: Todo): Promise<Series | undefined> {
+  if (todo.recurrenceId === null || todo.occurrence === null) return undefined;
+  const recurrence = (await storage.recurrences()).find((r) => r.id === todo.recurrenceId);
+  const rule = recurrence && tryParseRule(recurrence.rrule);
+  if (!recurrence || !rule) return undefined;
+  const todos = await storage.seriesTodos(recurrence.id);
+  return { recurrence, rule, todos, at: todo.occurrence };
+}
+
+const storedFrom = (series: Series, date: DateStr) =>
+  series.todos.filter((todo) => todo.occurrence! >= date);
+
+/** Ends the series before `at`, deleting the stored occurrences from then on. */
+function endSeries(series: Series, at: DateStr): Change[] {
+  const { recurrence, rule } = series;
+  const { before } = splitRule(rule, recurrence.startDate, at);
+  return [
+    ...patch(
+      'recurrence',
+      recurrence.id,
+      before ? { rrule: formatRule(before) } : { deleted: true },
+    ),
+    ...storedFrom(series, at).flatMap((todo) => patch('todo', todo.id, { deleted: true })),
+  ];
+}
+
+/**
+ * Applies `values` to the series from `at` on: to the recurrence itself if `at` is its start,
+ * otherwise to a new recurrence split off at `at`. Stored occurrences from `at` on move to it
+ * and get `update(todo)`.
+ */
+function reshape(
+  series: Series,
+  at: DateStr,
+  values: Partial<Fields<'recurrence'>>,
+  update: (todo: Todo) => Partial<Fields<'todo'>>,
+): Change[] {
+  const { recurrence, rule } = series;
+  const { before, after } = splitRule(rule, recurrence.startDate, at);
+  if (!before) {
+    return [
+      ...patch('recurrence', recurrence.id, values),
+      ...storedFrom(series, at).flatMap((todo) => patch('todo', todo.id, update(todo))),
+    ];
+  }
+  const id = newId();
+  return [
+    ...patch('recurrence', recurrence.id, { rrule: formatRule(before) }),
+    ...patch('recurrence', id, {
+      text: recurrence.text,
+      kind: recurrence.kind,
+      order: recurrence.order,
+      rrule: formatRule(after),
+      startDate: at,
+      deleted: false,
+      ...values,
+    }),
+    ...storedFrom(series, at).flatMap((todo) =>
+      patch('todo', todo.id, { recurrenceId: id, ...update(todo) }),
+    ),
+  ];
+}
+
+export function editTodo(todo: Todo, input: string, scope: Scope = 'this') {
   return serial(async () => {
     const entry = parseEntry(input);
-    if (!entry.text) return commit(patch('todo', todo.id, { deleted: true }));
+    if (!entry.text) return commit(await deletion(todo, 'this'));
     if (entry.text === todo.text && entry.kind === todo.kind) return;
-    await commit(patch('todo', todo.id, entry));
+    const series = scope === 'this' ? undefined : await seriesOf(todo);
+    if (!series) return commit(todoChanges(todo, entry));
+    const { recurrence, at } = series;
+    // Occurrences edited on their own keep their text.
+    const unchanged = (t: Todo) => t.text === recurrence.text && t.kind === recurrence.kind;
+    await commit(
+      reshape(series, scope === 'all' ? recurrence.startDate : at, entry, (t) =>
+        t.id === todo.id || unchanged(t) ? entry : {},
+      ),
+    );
   });
 }
 
@@ -107,8 +205,46 @@ export function setDone(todo: Todo, done: boolean) {
   return serial(() => commit(completionChanges(todo, done, today())));
 }
 
-export function deleteTodo(todo: Todo) {
-  return serial(() => commit(patch('todo', todo.id, { deleted: true })));
+async function deletion(todo: Todo, scope: 'this' | 'following'): Promise<Change[]> {
+  if (todo.recurrenceId === null) return patch('todo', todo.id, { deleted: true });
+  const series = scope === 'following' ? await seriesOf(todo) : undefined;
+  return series ? endSeries(series, series.at) : todoChanges(todo, { skipped: true });
+}
+
+export function deleteTodo(todo: Todo, scope: 'this' | 'following' = 'this') {
+  return serial(async () => commit(await deletion(todo, scope)));
+}
+
+/**
+ * Makes a day todo repeat by `rrule` (starting on its day), changes the rule of a recurring
+ * one, or with `rrule` null stops it repeating from its occurrence on.
+ */
+export function setRepeat(todo: Todo, rrule: string | null, scope: 'following' | 'all') {
+  return serial(async () => {
+    const series = await seriesOf(todo);
+    if (!series) {
+      const date = effectiveDate(todo, today());
+      if (rrule === null || date === null) return;
+      const id = newId();
+      const { text, kind, order } = todo;
+      return commit([
+        ...patch('recurrence', id, { rrule, startDate: date, text, kind, order, deleted: false }),
+        ...todoChanges(todo, { date, recurrenceId: id, occurrence: date }),
+      ]);
+    }
+    if (rrule === null) {
+      return commit([
+        ...endSeries(series, series.at),
+        ...todoChanges(todo, { recurrenceId: null, occurrence: null, deleted: false }),
+      ]);
+    }
+    const at = scope === 'all' ? series.recurrence.startDate : series.at;
+    const rule = parseRule(rrule);
+    // Undone occurrences the new rule no longer generates go away.
+    const fits = (t: Todo) =>
+      t.done || occurrences(rule, at, t.occurrence!, t.occurrence!).length > 0;
+    await commit(reshape(series, at, { rrule }, (t) => (fits(t) ? {} : { deleted: true })));
+  });
 }
 
 async function place(todo: Todo, target: Target, index: number) {
@@ -120,8 +256,8 @@ async function place(todo: Todo, target: Target, index: number) {
     index,
   );
   await commit([
-    ...patch('todo', todo.id, moving ? { ...locationOf(target), order } : { order }),
-    ...reorder('todo', rekeyed),
+    ...todoChanges(todo, moving ? { ...locationOf(target), order } : { order }),
+    ...reorderTodos(all, rekeyed),
   ]);
 }
 
@@ -134,8 +270,7 @@ export function moveByDays(todo: Todo, days: number) {
   return serial(async () => {
     const current = effectiveDate(todo, today());
     if (current === null) return;
-    let date = addDays(current, days);
-    if (!todo.done && date < today()) date = today();
+    const date = effectiveDate({ ...todo, date: addDays(current, days) }, today())!;
     if (date === current) return;
     const target = { date };
     await place(todo, target, (await todosIn(target)).length);
