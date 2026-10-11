@@ -1,0 +1,188 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ergon.invalid/protocol/v1.schema.json",
+  "title": "Ergon sync protocol v1",
+  "$defs": {
+    "Base64": {
+      "type": "string",
+      "pattern": "^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$"
+    },
+    "Id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^[A-Za-z0-9_-]+$"
+    },
+    "Seq": { "type": "integer", "minimum": 1 },
+    "Timestamp": { "type": "integer", "minimum": 0 },
+
+    "Error": {
+      "type": "object",
+      "required": ["error", "message"],
+      "additionalProperties": false,
+      "properties": {
+        "error": {
+          "enum": [
+            "bad_request",
+            "unauthorized",
+            "invite_required",
+            "invalid_invite",
+            "registration_closed",
+            "not_found",
+            "stale_snapshot",
+            "cursor_pruned",
+            "too_large",
+            "internal"
+          ]
+        },
+        "message": { "type": "string" }
+      }
+    },
+
+    "Info": {
+      "type": "object",
+      "required": ["version", "registration"],
+      "additionalProperties": false,
+      "properties": {
+        "version": { "const": 1 },
+        "registration": { "enum": ["open", "invite", "closed"] }
+      }
+    },
+
+    "Challenge": {
+      "type": "object",
+      "required": ["nonce"],
+      "additionalProperties": false,
+      "properties": { "nonce": { "$ref": "#/$defs/Base64", "minLength": 1 } }
+    },
+
+    "SessionRequest": {
+      "type": "object",
+      "required": ["publicKey", "nonce", "signature", "device"],
+      "additionalProperties": false,
+      "properties": {
+        "publicKey": { "$ref": "#/$defs/Base64", "minLength": 44, "maxLength": 44 },
+        "nonce": { "$ref": "#/$defs/Base64", "minLength": 1 },
+        "signature": { "$ref": "#/$defs/Base64", "minLength": 88, "maxLength": 88 },
+        "device": {
+          "type": "object",
+          "required": ["name"],
+          "additionalProperties": false,
+          "properties": { "name": { "type": "string", "minLength": 1, "maxLength": 100 } }
+        },
+        "invite": { "type": "string", "minLength": 1, "maxLength": 100 }
+      }
+    },
+
+    "Session": {
+      "type": "object",
+      "required": ["token", "deviceId", "account", "created"],
+      "additionalProperties": false,
+      "properties": {
+        "token": { "type": "string", "minLength": 1 },
+        "deviceId": { "$ref": "#/$defs/Id" },
+        "account": { "$ref": "#/$defs/Base64", "minLength": 44, "maxLength": 44 },
+        "created": { "type": "boolean" }
+      }
+    },
+
+    "Device": {
+      "type": "object",
+      "required": ["id", "name", "created", "lastSeen", "current"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "$ref": "#/$defs/Id" },
+        "name": { "type": "string" },
+        "created": { "$ref": "#/$defs/Timestamp" },
+        "lastSeen": { "$ref": "#/$defs/Timestamp" },
+        "current": { "type": "boolean" }
+      }
+    },
+
+    "Devices": {
+      "type": "object",
+      "required": ["devices"],
+      "additionalProperties": false,
+      "properties": { "devices": { "type": "array", "items": { "$ref": "#/$defs/Device" } } }
+    },
+
+    "BatchPush": {
+      "type": "object",
+      "required": ["id", "data"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "$ref": "#/$defs/Id" },
+        "data": { "$ref": "#/$defs/Base64", "minLength": 1 }
+      }
+    },
+
+    "BatchPushed": {
+      "type": "object",
+      "required": ["seq"],
+      "additionalProperties": false,
+      "properties": { "seq": { "$ref": "#/$defs/Seq" } }
+    },
+
+    "Batch": {
+      "type": "object",
+      "required": ["seq", "data"],
+      "additionalProperties": false,
+      "properties": {
+        "seq": { "$ref": "#/$defs/Seq" },
+        "data": { "$ref": "#/$defs/Base64", "minLength": 1 }
+      }
+    },
+
+    "Batches": {
+      "type": "object",
+      "required": ["batches", "more", "sinceSnapshot"],
+      "additionalProperties": false,
+      "properties": {
+        "batches": { "type": "array", "items": { "$ref": "#/$defs/Batch" } },
+        "more": { "type": "boolean" },
+        "sinceSnapshot": { "type": "integer", "minimum": 0 }
+      }
+    },
+
+    "Snapshot": {
+      "type": "object",
+      "required": ["seq", "data"],
+      "additionalProperties": false,
+      "properties": {
+        "seq": { "$ref": "#/$defs/Seq" },
+        "data": { "$ref": "#/$defs/Base64", "minLength": 1 }
+      }
+    },
+
+    "BatchEvent": {
+      "type": "object",
+      "required": ["seq"],
+      "additionalProperties": false,
+      "properties": { "seq": { "$ref": "#/$defs/Seq" } }
+    },
+
+    "LinkCreate": {
+      "type": "object",
+      "required": ["data"],
+      "additionalProperties": false,
+      "properties": { "data": { "$ref": "#/$defs/Base64", "minLength": 1 } }
+    },
+
+    "LinkCreated": {
+      "type": "object",
+      "required": ["id", "expires"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "$ref": "#/$defs/Id" },
+        "expires": { "$ref": "#/$defs/Timestamp" }
+      }
+    },
+
+    "Link": {
+      "type": "object",
+      "required": ["data"],
+      "additionalProperties": false,
+      "properties": { "data": { "$ref": "#/$defs/Base64", "minLength": 1 } }
+    }
+  }
+}

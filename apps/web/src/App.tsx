@@ -9,6 +9,7 @@ import { RepeatDialog } from './components/RepeatDialog';
 import { ScopeDialog } from './components/ScopeDialog';
 import { SettingsDialog } from './components/SettingsDialog';
 import { Sidebar } from './components/Sidebar';
+import { SyncDialog } from './components/SyncDialog';
 import { readableOn } from './lib/color';
 import { setEffectLayer } from './lib/effects';
 import { installShortcuts } from './lib/shortcuts';
@@ -16,6 +17,7 @@ import { isPhone } from './lib/viewport';
 import { addGroup } from './state/actions';
 import { groups, groupsReady, settings, settingsReady } from './state/data';
 import { storageError } from './state/storage';
+import { pendingLink, setSyncOpen } from './state/sync';
 import { mobileView } from './state/view';
 
 /** Fixed id so devices that seed concurrently end up with the same tab. */
@@ -41,6 +43,9 @@ export function App() {
   });
 
   onMount(() => onCleanup(installShortcuts()));
+  onMount(() => {
+    if (pendingLink()) setSyncOpen(true);
+  });
 
   const showDays = () => !isPhone() || mobileView() === 'days';
   const showLists = () => !isPhone() || mobileView() === 'lists';
@@ -70,6 +75,7 @@ export function App() {
       <Sidebar />
       <div class="effect-layer" ref={setEffectLayer} />
       <SettingsDialog />
+      <SyncDialog />
       <HelpDialog />
       <RepeatDialog />
       <ScopeDialog />

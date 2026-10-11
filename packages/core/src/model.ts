@@ -84,6 +84,8 @@ export type Change = {
 export type Op = Change & { hlc: Hlc };
 
 export const SETTINGS_ID = 'settings';
+/** Longest todo text or list name, in characters. */
+export const MAX_TEXT = 500;
 
 /** Field defaults; also the list of known fields per entity. */
 export const defaults: { [E in Entity]: Fields<E> } = {

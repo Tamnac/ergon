@@ -5,6 +5,7 @@ import {
   completionChanges,
   effectiveDate,
   formatRule,
+  MAX_TEXT,
   newId,
   occurrences,
   orderAt,
@@ -87,9 +88,8 @@ async function todosIn(target: Target): Promise<Todo[]> {
 
 export function parseEntry(input: string): Pick<Todo, 'text' | 'kind'> {
   const heading = /^#\s*(.*)$/.exec(input.trim());
-  return heading
-    ? { text: heading[1]!.trim(), kind: 'heading' }
-    : { text: input.trim(), kind: 'todo' };
+  const text = (heading ? heading[1]! : input).trim().slice(0, MAX_TEXT);
+  return { text, kind: heading ? 'heading' : 'todo' };
 }
 
 export function addTodo(target: Target, input: string) {

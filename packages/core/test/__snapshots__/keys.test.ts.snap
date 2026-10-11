@@ -1,0 +1,3 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`keys > derives stable, independent keys 1`] = `"Fy9eyCPrLDzH2e756JcdfS7B4VRy06rHrS1Vdf8zjgc="`;

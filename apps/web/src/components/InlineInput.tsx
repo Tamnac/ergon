@@ -1,3 +1,4 @@
+import { MAX_TEXT } from '@ergon/core';
 import { onMount } from 'solid-js';
 
 export type CommitReason = 'enter' | 'blur';
@@ -33,6 +34,7 @@ export function InlineInput(props: {
       ref={input}
       class={`inline-input ${props.class ?? ''}`}
       value={props.value ?? ''}
+      maxLength={MAX_TEXT}
       aria-label={props.label}
       placeholder={props.placeholder}
       onKeyDown={(event) => {

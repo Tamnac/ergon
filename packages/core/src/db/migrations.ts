@@ -74,6 +74,15 @@ export const migrations: readonly string[] = [
     deleted INTEGER NOT NULL DEFAULT 0
   );
   `,
+  `
+  ALTER TABLE op_log ADD COLUMN pushed INTEGER NOT NULL DEFAULT 0;
+  CREATE INDEX op_log_outbox ON op_log (hlc) WHERE pushed = 0;
+
+  CREATE TABLE sync_state (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL
+  ) WITHOUT ROWID;
+  `,
 ];
 
 export async function migrate(driver: SqlDriver): Promise<void> {

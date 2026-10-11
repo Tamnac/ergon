@@ -56,15 +56,76 @@ export class Database implements Storage {
       await this.#catchUp();
       const ops = changes.map((change) => ({ ...change, hlc: this.#clock.tick() }) as Op);
       const inverse: Change[] = [];
-      return [inverse, await this.#merge(ops, inverse)];
+      return [inverse, await this.#merge(ops, false, inverse)];
     });
   }
 
-  /** Merges ops from elsewhere (sync). Unknown entities/fields are logged but not materialized. */
+  /**
+   * Merges ops that came from the sync server. Unknown entities/fields are logged but not
+   * materialized, so a later version can pick them up.
+   */
   apply(ops: readonly Op[]): Promise<void> {
     return this.#mutate(async () => {
       for (const op of ops) this.#clock.receive(op.hlc);
-      return [undefined, await this.#merge(ops)];
+      return [undefined, await this.#merge(ops, true)];
+    });
+  }
+
+  /** Local ops not yet on the sync server, oldest first. */
+  outbox(limit: number): Promise<Op[]> {
+    return this.#serial(async () =>
+      (
+        await this.#driver.query(
+          'SELECT hlc, entity, id, field, value FROM op_log WHERE pushed = 0 ORDER BY hlc LIMIT ?',
+          [limit],
+        )
+      ).map(toOp),
+    );
+  }
+
+  markPushed(ops: readonly Op[]): Promise<void> {
+    return this.#serial(async () => {
+      await this.#driver.query(
+        `UPDATE op_log SET pushed = 1 WHERE pushed = 0 AND hlc IN ${placeholders(1, ops.length)}`,
+        ops.map((op) => op.hlc),
+      );
+    });
+  }
+
+  /** Queues every logged op for pushing again, e.g. when syncing with a different account. */
+  resetOutbox(): Promise<void> {
+    return this.#serial(() => this.#driver.exec('UPDATE op_log SET pushed = 0'));
+  }
+
+  /** The newest op per field, including fields this version doesn't know. */
+  compacted(): Promise<Op[]> {
+    return this.#serial(async () =>
+      (
+        await this.#driver.query(
+          'SELECT max(hlc) AS hlc, entity, id, field, value FROM op_log GROUP BY entity, id, field',
+        )
+      ).map(toOp),
+    );
+  }
+
+  /** Device-local sync state; never synced. */
+  local(key: string): Promise<string | undefined> {
+    return this.#serial(async () => {
+      const [row] = await this.#driver.query('SELECT value FROM sync_state WHERE key = ?', [key]);
+      return row?.value as string | undefined;
+    });
+  }
+
+  setLocal(key: string, value: string | undefined): Promise<void> {
+    return this.#serial(async () => {
+      if (value === undefined) {
+        await this.#driver.query('DELETE FROM sync_state WHERE key = ?', [key]);
+      } else {
+        await this.#driver.query(
+          'INSERT INTO sync_state (key, value) VALUES (?, ?) ON CONFLICT (key) DO UPDATE SET value = excluded.value',
+          [key, value],
+        );
+      }
     });
   }
 
@@ -212,7 +273,7 @@ export class Database implements Storage {
    * Logs `ops` and materializes the winners, one entity at a time. If `inverse` is given,
    * the changes that restore the state before `ops` are appended to it.
    */
-  async #merge(ops: readonly Op[], inverse?: Change[]): Promise<Set<Entity>> {
+  async #merge(ops: readonly Op[], pushed: boolean, inverse?: Change[]): Promise<Set<Entity>> {
     const touched = new Set<Entity>();
     for (const group of groupByEntity(ops)) {
       const { entity, id } = group[0]!;
@@ -220,8 +281,16 @@ export class Database implements Storage {
       inverse?.push(...inverseOf(entity, id, group, current));
 
       await this.#driver.query(
-        `INSERT OR IGNORE INTO op_log (hlc, entity, id, field, value) VALUES ${placeholders(group.length, 5)}`,
-        group.flatMap((op) => [op.hlc, entity, id, op.field, JSON.stringify(op.value)]),
+        `INSERT INTO op_log (hlc, entity, id, field, value, pushed) VALUES ${placeholders(group.length, 6)}
+         ON CONFLICT (hlc, entity, id, field) DO UPDATE SET pushed = max(pushed, excluded.pushed)`,
+        group.flatMap((op) => [
+          op.hlc,
+          entity,
+          id,
+          op.field,
+          JSON.stringify(op.value),
+          Number(pushed),
+        ]),
       );
 
       const winners = new Map<string, Op>();
@@ -302,6 +371,11 @@ function inverseOf(
     const value = previous ? (JSON.parse(previous.value) as Value) : fieldDefault(entity, field);
     return { entity, id, field, value } as Change;
   });
+}
+
+function toOp(row: Row): Op {
+  const { hlc, entity, id, field, value } = row as Record<string, string>;
+  return { hlc, entity, id, field, value: JSON.parse(value!) as Value } as Op;
 }
 
 function toSql(value: Value): SqlValue {

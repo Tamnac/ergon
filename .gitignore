@@ -8,6 +8,8 @@ playwright-report/
 *.tsbuildinfo
 /apps/server/ergon
 /apps/server/ergon.exe
+/apps/server/internal/web/static/*
+!/apps/server/internal/web/static/.gitkeep
 *.db
 *.db-*
 skills/

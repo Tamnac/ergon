@@ -1,8 +1,9 @@
 import { createSignal } from 'solid-js';
-import { createWorkerStorage } from '../db/client';
+import { createWorkerClient } from '../db/client';
 
-export const storage = createWorkerStorage(
+export const worker = createWorkerClient(
   new Worker(new URL('../db/worker.ts', import.meta.url), { type: 'module', name: 'ergon-db' }),
 );
+export const storage = worker.storage;
 
 export const [storageError, setStorageError] = createSignal<unknown>();

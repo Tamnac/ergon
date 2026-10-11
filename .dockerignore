@@ -1,0 +1,14 @@
+**/node_modules
+**/dist
+.git
+**/test-results
+**/playwright-report
+**/coverage
+*.db
+*.db-*
+apps/server/ergon
+apps/server/ergon.exe
+apps/server/internal/web/static
+ref.png
+PLAN.md
+skills

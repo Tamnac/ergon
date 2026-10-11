@@ -1,0 +1,122 @@
+{
+  "Error": {
+    "valid": [{ "error": "cursor_pruned", "message": "batches before 12 were pruned" }],
+    "invalid": [{ "error": "teapot", "message": "" }, { "error": "not_found" }]
+  },
+  "Info": {
+    "valid": [{ "version": 1, "registration": "invite" }],
+    "invalid": [
+      { "version": 2, "registration": "open" },
+      { "version": 1, "registration": "maybe" }
+    ]
+  },
+  "Challenge": {
+    "valid": [{ "nonce": "q83vEjRWeJCrze8SNFZ4kKvN7xI0VniQq83vEjRWeJA=" }],
+    "invalid": [{ "nonce": "" }, { "nonce": "not base64!" }]
+  },
+  "SessionRequest": {
+    "valid": [
+      {
+        "publicKey": "11qYAYKxCrfVS/7TyWQHOg7hcvPapiMlrwIaaPcHURo=",
+        "nonce": "q83vEjRWeJCrze8SNFZ4kKvN7xI0VniQq83vEjRWeJA=",
+        "signature": "5VZDAMNgrHKQhuLMgG6CioSHfx645dl02HPgZSJJAVVfuIIVkKM7rMYeOXAc+bRr0lv18FlbviRlUUFDjnoQCw==",
+        "device": { "name": "Firefox on Linux" }
+      },
+      {
+        "publicKey": "11qYAYKxCrfVS/7TyWQHOg7hcvPapiMlrwIaaPcHURo=",
+        "nonce": "q83vEjRWeJCrze8SNFZ4kKvN7xI0VniQq83vEjRWeJA=",
+        "signature": "5VZDAMNgrHKQhuLMgG6CioSHfx645dl02HPgZSJJAVVfuIIVkKM7rMYeOXAc+bRr0lv18FlbviRlUUFDjnoQCw==",
+        "device": { "name": "Pixel" },
+        "invite": "k3v9-2mfq"
+      }
+    ],
+    "invalid": [
+      {
+        "publicKey": "short",
+        "nonce": "q83vEjRWeJCrze8SNFZ4kKvN7xI0VniQq83vEjRWeJA=",
+        "signature": "5VZDAMNgrHKQhuLMgG6CioSHfx645dl02HPgZSJJAVVfuIIVkKM7rMYeOXAc+bRr0lv18FlbviRlUUFDjnoQCw==",
+        "device": { "name": "Pixel" }
+      },
+      {
+        "publicKey": "11qYAYKxCrfVS/7TyWQHOg7hcvPapiMlrwIaaPcHURo=",
+        "nonce": "q83vEjRWeJCrze8SNFZ4kKvN7xI0VniQq83vEjRWeJA=",
+        "signature": "5VZDAMNgrHKQhuLMgG6CioSHfx645dl02HPgZSJJAVVfuIIVkKM7rMYeOXAc+bRr0lv18FlbviRlUUFDjnoQCw==",
+        "device": { "name": "" }
+      }
+    ]
+  },
+  "Session": {
+    "valid": [
+      {
+        "token": "b2s1lO4mEJ3cYk3fQ0q2m1cGmS6d3m1kZ0f4hVqYw2Q",
+        "deviceId": "Zk3v9m2fqA7x",
+        "account": "11qYAYKxCrfVS/7TyWQHOg7hcvPapiMlrwIaaPcHURo=",
+        "created": true
+      }
+    ],
+    "invalid": [{ "token": "t", "deviceId": "d", "created": false }]
+  },
+  "Devices": {
+    "valid": [
+      { "devices": [] },
+      {
+        "devices": [
+          {
+            "id": "Zk3v9m2fqA7x",
+            "name": "Firefox on Linux",
+            "created": 1790000000000,
+            "lastSeen": 1790000500000,
+            "current": true
+          }
+        ]
+      }
+    ],
+    "invalid": [{ "devices": [{ "id": "x", "name": "y" }] }]
+  },
+  "BatchPush": {
+    "valid": [{ "id": "0b6f3c1e-2d4a-4f5b-9c8d-7e6f5a4b3c2d", "data": "AQIDBA==" }],
+    "invalid": [
+      { "id": "", "data": "AQIDBA==" },
+      { "id": "has space", "data": "AQIDBA==" },
+      { "id": "a", "data": "" }
+    ]
+  },
+  "BatchPushed": {
+    "valid": [{ "seq": 42 }],
+    "invalid": [{ "seq": 0 }, { "seq": "42" }]
+  },
+  "Batches": {
+    "valid": [
+      { "batches": [], "more": false, "sinceSnapshot": 0 },
+      {
+        "batches": [
+          { "seq": 3, "data": "AQIDBA==" },
+          { "seq": 7, "data": "BQYH" }
+        ],
+        "more": true,
+        "sinceSnapshot": 2
+      }
+    ],
+    "invalid": [{ "batches": [{ "seq": 1 }], "more": false, "sinceSnapshot": 0 }]
+  },
+  "Snapshot": {
+    "valid": [{ "seq": 7, "data": "AQIDBA==" }],
+    "invalid": [{ "seq": 0, "data": "AQIDBA==" }, { "data": "AQIDBA==" }]
+  },
+  "BatchEvent": {
+    "valid": [{ "seq": 8 }],
+    "invalid": [{}]
+  },
+  "LinkCreate": {
+    "valid": [{ "data": "AQIDBA==" }],
+    "invalid": [{ "data": "" }]
+  },
+  "LinkCreated": {
+    "valid": [{ "id": "p9Qm3v7xTzK2", "expires": 1790000600000 }],
+    "invalid": [{ "id": "p9Qm3v7xTzK2" }]
+  },
+  "Link": {
+    "valid": [{ "data": "AQIDBA==" }],
+    "invalid": [{}]
+  }
+}

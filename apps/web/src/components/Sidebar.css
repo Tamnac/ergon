@@ -57,3 +57,36 @@
   color: var(--fg);
   box-shadow: inset 0 -2px var(--accent);
 }
+
+.sync-button {
+  position: relative;
+}
+
+.sync-button.is-off {
+  color: var(--fg-muted);
+}
+
+.sync-button::after {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.sync-button.is-syncing::after,
+.sync-button.is-offline::after,
+.sync-button.is-error::after {
+  content: '';
+}
+
+.sync-button.is-syncing::after {
+  background: var(--accent);
+  animation: sync-pulse 1s ease-in-out infinite alternate;
+}
+
+.sync-button.is-offline::after,
+.sync-button.is-error::after {
+  box-shadow: inset 0 0 0 1.5px var(--fg);
+}

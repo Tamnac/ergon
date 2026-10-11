@@ -8,6 +8,13 @@ linters:
     - gocritic
     - misspell
     - unconvert
+  settings:
+    errcheck:
+      exclude-functions:
+        - (*database/sql.Rows).Close
+        - (*os.File).Close
+        - (io/fs.File).Close
+        - (io.ReadCloser).Close
 
 formatters:
   enable:

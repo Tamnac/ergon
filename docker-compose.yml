@@ -1,0 +1,13 @@
+services:
+  ergon:
+    build: .
+    restart: unless-stopped
+    ports:
+      - '8080:8080'
+    environment:
+      ERGON_REGISTRATION: invite
+    volumes:
+      - data:/data
+
+volumes:
+  data:
