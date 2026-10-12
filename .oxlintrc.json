@@ -12,5 +12,11 @@
     "no-shadow": "off"
   },
   "overrides": [{ "files": ["**/*.tsx"], "rules": { "no-unassigned-vars": "off" } }],
-  "ignorePatterns": ["**/dist/**", "**/playwright-report/**", "**/test-results/**"]
+  "ignorePatterns": [
+    "**/dist/**",
+    "**/playwright-report/**",
+    "**/test-results/**",
+    "**/target/**",
+    "**/gen/**"
+  ]
 }

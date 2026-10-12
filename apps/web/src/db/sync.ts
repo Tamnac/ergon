@@ -52,6 +52,7 @@ type Message = { type: 'state'; state: SyncState } | { type: 'hello' | 'restart'
 export function createSync(
   db: Database,
   publish: (state: SyncState) => void,
+  options: { app?: string } = {},
 ): SyncControl & { changed(): void } {
   const channel = new BroadcastChannel('ergon-sync');
   let leader = false;
@@ -123,7 +124,7 @@ export function createSync(
     return new SyncApi(server, token);
   };
   const start = async (server: string, seed: Uint8Array, invite?: string) => {
-    await exclusive(() => signIn(db, server, seed, { device: deviceName(), invite }));
+    await exclusive(() => signIn(db, server, seed, { device: deviceName(options.app), invite }));
     send({ type: 'restart' });
   };
 
@@ -158,16 +159,18 @@ export function createSync(
   };
 }
 
-/** A readable name like "Firefox on Linux" for the devices list. */
-function deviceName(): string {
+/** A readable name like "Firefox on Linux" for the devices list; `app` replaces the browser. */
+function deviceName(app?: string): string {
   const ua = navigator.userAgent;
   const browser =
+    app ??
     [
       ['Edg/', 'Edge'],
       ['Firefox/', 'Firefox'],
       ['Chrome/', 'Chrome'],
       ['Safari/', 'Safari'],
-    ].find(([token]) => ua.includes(token!))?.[1] ?? 'Browser';
+    ].find(([token]) => ua.includes(token!))?.[1] ??
+    'Browser';
   const os = [
     ['Android', 'Android'],
     ['iPhone', 'iPhone'],

@@ -34,6 +34,12 @@ function isTyping(target: EventTarget | null) {
   );
 }
 
+/** Starts adding a todo to today. */
+export function addToToday() {
+  if (!visibleDays().includes(today())) jumpTo(today());
+  setAddingKey(targetKey({ date: today() }));
+}
+
 /** Global keys. Keys on a focused todo are handled in `TodoItem`. */
 export function installShortcuts(): () => void {
   const onKeyDown = (event: KeyboardEvent) => {
@@ -65,8 +71,7 @@ export function installShortcuts(): () => void {
         jumpTo(today());
         break;
       case 'n':
-        if (!visibleDays().includes(today())) jumpTo(today());
-        setAddingKey(targetKey({ date: today() }));
+        addToToday();
         break;
       case '1':
       case '3':

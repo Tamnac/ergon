@@ -3,6 +3,7 @@ import { For, Match, Show, Switch, createResource, createSignal, type JSX } from
 import { renderSVG } from 'uqr';
 import type { WorkerError } from '../db/client';
 import type { SyncState } from '../db/sync';
+import { isDesktop } from '../lib/desktop';
 import {
   linkUrl,
   pendingLink,
@@ -113,11 +114,14 @@ function RedeemLink(props: { server: string; onDone: () => void }) {
 
 function SignIn(props: { onCreated: (phrase: string) => void }) {
   const [mode, setMode] = createSignal<'create' | 'join'>('create');
-  const [server, setServer] = createSignal(location.origin);
+  const [server, setServer] = createSignal(isDesktop ? '' : location.origin);
   const [phrase, setPhrase] = createSignal('');
   const [invite, setInvite] = createSignal('');
   const [inviteNeeded, setInviteNeeded] = createSignal(false);
-  const [info] = createResource(server, (url) => sync.info(url).catch(() => null));
+  const [info] = createResource(
+    () => server() || false,
+    (url) => sync.info(url).catch(() => null),
+  );
   const action = useAction((error) => {
     if ((error as WorkerError).code === 'invite_required') setInviteNeeded(true);
   });
@@ -154,12 +158,13 @@ function SignIn(props: { onCreated: (phrase: string) => void }) {
           class="input"
           type="url"
           required
+          placeholder={isDesktop ? 'https://' : undefined}
           aria-describedby="sync-server-hint"
           value={server()}
           onChange={(e) => setServer(e.currentTarget.value.trim())}
         />
         <span id="sync-server-hint" class="sync-hint">
-          {info.loading
+          {info.loading || !server()
             ? '\u00a0'
             : info()
               ? registrationLabels[info()!.registration]

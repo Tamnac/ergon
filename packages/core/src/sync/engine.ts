@@ -141,7 +141,7 @@ export class SyncEngine {
 
   /** Whether these credentials are still the stored ones; another tab may have switched them. */
   async #signedIn(): Promise<boolean> {
-    const stored = await this.#db.local(CREDENTIALS_KEY);
+    const stored = await this.#db.secret(CREDENTIALS_KEY);
     return stored !== undefined && (JSON.parse(stored) as Credentials).token === this.#token;
   }
 

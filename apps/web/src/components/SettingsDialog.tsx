@@ -1,6 +1,14 @@
 import type { DayCount, Theme } from '@ergon/core';
-import { For } from 'solid-js';
+import { disable, enable, isEnabled } from '@tauri-apps/plugin-autostart';
+import { For, Show, createResource } from 'solid-js';
 import { updateSettings } from '../state/actions';
+import {
+  closeToTray,
+  isDesktop,
+  quickAddAvailable,
+  quickAddShortcut,
+  setCloseToTray,
+} from '../lib/desktop';
 import { settings } from '../state/data';
 import { setSettingsOpen, settingsOpen } from '../state/view';
 import { Dialog } from './Dialog';
@@ -119,6 +127,47 @@ export function SettingsDialog() {
         />
         Condensed weekends
       </label>
+
+      <Show when={isDesktop}>
+        <DesktopSettings />
+      </Show>
     </Dialog>
+  );
+}
+
+function DesktopSettings() {
+  const [autostart, { mutate }] = createResource(isEnabled);
+  const [shortcutAvailable] = createResource(quickAddAvailable);
+  const toggleAutostart = async (on: boolean) => {
+    await (on ? enable() : disable());
+    mutate(on);
+  };
+
+  return (
+    <fieldset class="field">
+      <legend class="field-label">This computer</legend>
+      <label class="checkbox">
+        <input
+          type="checkbox"
+          checked={autostart() ?? false}
+          disabled={autostart.loading}
+          onChange={(e) => void toggleAutostart(e.currentTarget.checked)}
+        />
+        Start at login
+      </label>
+      <label class="checkbox">
+        <input
+          type="checkbox"
+          checked={closeToTray()}
+          onChange={(e) => setCloseToTray(e.currentTarget.checked)}
+        />
+        Keep running in the tray when closed
+      </label>
+      <span class="sync-hint">
+        {shortcutAvailable() === false
+          ? `${quickAddShortcut} is used by another app, so it can't open Ergon.`
+          : `${quickAddShortcut} opens Ergon from anywhere to add a todo.`}
+      </span>
+    </fieldset>
   );
 }

@@ -23,6 +23,12 @@ import type { ChangeListener, Storage, TodoMark } from '../storage';
 import type { Row, SqlDriver, SqlValue } from './driver';
 import { migrate } from './migrations';
 
+/** Keeps secrets outside the database file, e.g. in the OS keychain. */
+export interface SecretStore {
+  get(key: string): Promise<string | undefined>;
+  set(key: string, value: string | undefined): Promise<void>;
+}
+
 /**
  * Op log plus materialized tables on top of a SQL driver. Every write is recorded in
  * `op_log`; `field_state` keeps the winning op per field and the entity tables mirror it.
@@ -30,17 +36,24 @@ import { migrate } from './migrations';
 export class Database implements Storage {
   readonly #driver: SqlDriver;
   readonly #clock: Clock;
+  readonly #secrets: SecretStore | undefined;
   readonly #listeners = new Set<ChangeListener>();
   #queue: Promise<unknown> = Promise.resolve();
 
-  private constructor(driver: SqlDriver, clock: Clock) {
+  private constructor(driver: SqlDriver, clock: Clock, secrets?: SecretStore) {
     this.#driver = driver;
     this.#clock = clock;
+    this.#secrets = secrets;
   }
 
-  static async open(driver: SqlDriver, now: () => number = Date.now): Promise<Database> {
+  /** `secrets` defaults to the `sync_state` table, i.e. the database file itself. */
+  static async open(
+    driver: SqlDriver,
+    now: () => number = Date.now,
+    secrets?: SecretStore,
+  ): Promise<Database> {
     await migrate(driver);
-    const db = new Database(driver, new Clock(randomNode(), now));
+    const db = new Database(driver, new Clock(randomNode(), now), secrets);
     await db.#catchUp();
     return db;
   }
@@ -127,6 +140,15 @@ export class Database implements Storage {
         );
       }
     });
+  }
+
+  /** Like `local`, but kept in the secret store if there is one. */
+  secret(key: string): Promise<string | undefined> {
+    return this.#secrets ? this.#secrets.get(key) : this.local(key);
+  }
+
+  setSecret(key: string, value: string | undefined): Promise<void> {
+    return this.#secrets ? this.#secrets.set(key, value) : this.setLocal(key, value);
   }
 
   todosBetween(from: DateStr, to: DateStr, today: DateStr): Promise<Todo[]> {

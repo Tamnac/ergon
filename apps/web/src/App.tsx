@@ -12,7 +12,8 @@ import { Sidebar } from './components/Sidebar';
 import { SyncDialog } from './components/SyncDialog';
 import { readableOn } from './lib/color';
 import { setEffectLayer } from './lib/effects';
-import { installShortcuts } from './lib/shortcuts';
+import { installDesktop, isDesktop } from './lib/desktop';
+import { addToToday, installShortcuts } from './lib/shortcuts';
 import { isPhone } from './lib/viewport';
 import { addGroup } from './state/actions';
 import { groups, groupsReady, settings, settingsReady } from './state/data';
@@ -44,6 +45,9 @@ export function App() {
 
   onMount(() => onCleanup(installShortcuts()));
   onMount(() => {
+    if (isDesktop) onCleanup(installDesktop(addToToday));
+  });
+  onMount(() => {
     if (pendingLink()) setSyncOpen(true);
   });
 
@@ -58,8 +62,10 @@ export function App() {
       <main class="main">
         <Show when={storageError()}>
           <p class="error" role="alert">
-            Local storage is unavailable, so changes can't be saved. This browser may not support
-            the Origin Private File System, or it is disabled in private mode.
+            Local storage is unavailable, so changes can't be saved.{' '}
+            {isDesktop
+              ? String(storageError())
+              : 'This browser may not support the Origin Private File System, or it is disabled in private mode.'}
           </p>
         </Show>
         <Show when={showDays()}>

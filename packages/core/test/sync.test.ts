@@ -235,6 +235,26 @@ describe('accounts', () => {
     expect(server.accounts).toEqual(new Set([deriveKeys(seed).account]));
   });
 
+  it('keeps credentials in the secret store when there is one', async () => {
+    const server = new FakeServer();
+    const stored = new Map<string, string>();
+    const secrets = {
+      get: async (key: string) => stored.get(key),
+      set: async (key: string, value: string | undefined) => {
+        if (value === undefined) stored.delete(key);
+        else stored.set(key, value);
+      },
+    };
+    const driver = memoryDriver();
+    const db = await Database.open(driver, Date.now, secrets);
+    await signIn(db, server.url, generateSeed(), { device: 'x', fetch: server.fetch });
+    expect(await loadCredentials(db)).toMatchObject({ server: server.url });
+    expect([...stored.keys()]).toEqual(['credentials']);
+    expect(await driver.query("SELECT 1 FROM sync_state WHERE key = 'credentials'")).toEqual([]);
+    await signOut(db, server.fetch);
+    expect(stored.size).toBe(0);
+  });
+
   it('links a device through a one-time link', async () => {
     const server = new FakeServer();
     const seed = generateSeed();

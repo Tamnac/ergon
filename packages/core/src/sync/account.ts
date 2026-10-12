@@ -16,7 +16,7 @@ import { deriveKeys } from './keys';
 const REMOTE_KEY = 'remote';
 
 export async function loadCredentials(db: Database): Promise<Credentials | undefined> {
-  const stored = await db.local(CREDENTIALS_KEY);
+  const stored = await db.secret(CREDENTIALS_KEY);
   return stored ? (JSON.parse(stored) as Credentials) : undefined;
 }
 
@@ -45,14 +45,14 @@ export async function signIn(
     token: session.token,
     deviceId: session.deviceId,
   };
-  await db.setLocal(CREDENTIALS_KEY, JSON.stringify(credentials));
+  await db.setSecret(CREDENTIALS_KEY, JSON.stringify(credentials));
   return credentials;
 }
 
 /** Forgets the credentials; local data stays. Revokes the session if the server is reachable. */
 export async function signOut(db: Database, fetch?: Fetch): Promise<void> {
   const credentials = await loadCredentials(db);
-  await db.setLocal(CREDENTIALS_KEY, undefined);
+  await db.setSecret(CREDENTIALS_KEY, undefined);
   if (credentials) {
     await new SyncApi(credentials.server, credentials.token, fetch).signOut().catch(() => {});
   }

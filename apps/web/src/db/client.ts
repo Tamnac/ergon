@@ -19,12 +19,15 @@ export class WorkerError extends Error {
   }
 }
 
-/** Main-thread `Storage` and `SyncControl` backed by the database worker. */
-export function createWorkerClient(worker: Worker): {
+/** What the UI uses of the database and sync, wherever they run. */
+export interface DatabaseClient {
   storage: Storage;
   sync: SyncControl;
   onSyncState(listener: (state: SyncState) => void): void;
-} {
+}
+
+/** Main-thread `Storage` and `SyncControl` backed by the database worker. */
+export function createWorkerClient(worker: Worker): DatabaseClient {
   let nextId = 0;
   const pending = new Map<number, PromiseWithResolvers<unknown>>();
   const listeners = new Set<ChangeListener>();

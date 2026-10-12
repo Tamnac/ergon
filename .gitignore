@@ -13,3 +13,5 @@ playwright-report/
 *.db
 *.db-*
 skills/
+/apps/desktop/src-tauri/target
+/apps/desktop/src-tauri/gen
