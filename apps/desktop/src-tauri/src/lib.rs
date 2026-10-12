@@ -1,4 +1,5 @@
 mod db;
+mod reminders;
 mod secrets;
 mod shell;
 
@@ -24,11 +25,13 @@ pub fn run() {
             Some(vec![MINIMIZED]),
         ))
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
+        .plugin(tauri_plugin_notification::init())
         .invoke_handler(tauri::generate_handler![
             db::sql_exec,
             db::sql_query,
             secrets::secret_get,
             secrets::secret_set,
+            reminders::set_reminders,
             shell::quick_add_shortcut_registered,
         ])
         .setup(|app| {
@@ -36,6 +39,7 @@ pub fn run() {
             std::fs::create_dir_all(&dir)?;
             app.manage(db::Db::open(&dir.join("ergon.db"))?);
             shell::setup(app)?;
+            reminders::setup(app);
             if !std::env::args().any(|arg| arg == MINIMIZED) {
                 shell::show_main(app.handle());
             }

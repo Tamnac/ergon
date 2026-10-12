@@ -31,22 +31,25 @@ Registration modes (server config): `open` accepts anyone; `invite` requires an 
 
 ## Endpoints
 
-| Method + path                       | Auth | Request          | Response                                 |
-| ----------------------------------- | ---- | ---------------- | ---------------------------------------- |
-| `GET /api/health`                   | no   |                  | `{ status: "ok" }`                       |
-| `GET /api/v1/info`                  | no   |                  | `Info`                                   |
-| `POST /api/v1/challenge`            | no   |                  | `Challenge`                              |
-| `POST /api/v1/session`              | no   | `SessionRequest` | `Session`                                |
-| `DELETE /api/v1/session`            | yes  |                  | 204, revokes the calling device          |
-| `GET /api/v1/devices`               | yes  |                  | `Devices`                                |
-| `DELETE /api/v1/devices/{id}`       | yes  |                  | 204; 404 if not a device of this account |
-| `POST /api/v1/batches`              | yes  | `BatchPush`      | `BatchPushed`                            |
-| `GET /api/v1/batches?after=&limit=` | yes  |                  | `Batches`                                |
-| `GET /api/v1/snapshot`              | yes  |                  | `Snapshot`; 404 if none                  |
-| `PUT /api/v1/snapshot`              | yes  | `Snapshot`       | 204                                      |
-| `GET /api/v1/events`                | yes  |                  | `text/event-stream`                      |
-| `POST /api/v1/links`                | yes  | `LinkCreate`     | `LinkCreated` (201)                      |
-| `GET /api/v1/links/{id}`            | no   |                  | `Link`; 404 if unknown, used or expired  |
+| Method + path                       | Auth | Request            | Response                                        |
+| ----------------------------------- | ---- | ------------------ | ----------------------------------------------- |
+| `GET /api/health`                   | no   |                    | `{ status: "ok" }`                              |
+| `GET /api/v1/info`                  | no   |                    | `Info`                                          |
+| `POST /api/v1/challenge`            | no   |                    | `Challenge`                                     |
+| `POST /api/v1/session`              | no   | `SessionRequest`   | `Session`                                       |
+| `DELETE /api/v1/session`            | yes  |                    | 204, revokes the calling device                 |
+| `GET /api/v1/devices`               | yes  |                    | `Devices`                                       |
+| `DELETE /api/v1/devices/{id}`       | yes  |                    | 204; 404 if not a device of this account        |
+| `POST /api/v1/batches`              | yes  | `BatchPush`        | `BatchPushed`                                   |
+| `GET /api/v1/batches?after=&limit=` | yes  |                    | `Batches`                                       |
+| `GET /api/v1/snapshot`              | yes  |                    | `Snapshot`; 404 if none                         |
+| `PUT /api/v1/snapshot`              | yes  | `Snapshot`         | 204                                             |
+| `GET /api/v1/events`                | yes  |                    | `text/event-stream`                             |
+| `POST /api/v1/links`                | yes  | `LinkCreate`       | `LinkCreated` (201)                             |
+| `GET /api/v1/links/{id}`            | no   |                    | `Link`; 404 if unknown, used or expired         |
+| `PUT /api/v1/push`                  | yes  | `PushSubscription` | 204, replaces the calling device's subscription |
+| `DELETE /api/v1/push`               | yes  |                    | 204, removes the calling device's subscription  |
+| `PUT /api/v1/reminders`             | yes  | `Reminders`        | 204                                             |
 
 ### Batches
 
@@ -66,11 +69,19 @@ A snapshot is an encrypted compaction of all ops the client has applied up to ba
 
 A signed-in device uploads the account seed encrypted with a one-time key (`POST /api/v1/links`) and shows the link id and key, e.g. as a QR code. The new device fetches it once with `GET /api/v1/links/{id}`, which deletes it. Links expire after 10 minutes. `data` is at most 4 KiB decoded.
 
+### Reminders
+
+Web Push lets a device show a reminder while the app is closed. `Info.vapid` is the server's VAPID public key (unpadded base64url, the `applicationServerKey` for `PushManager.subscribe`). A device registers its browser subscription with `PUT /api/v1/push`; it is dropped when the device is revoked or the push service reports it gone (404/410).
+
+`PUT /api/v1/reminders` replaces the account's pending reminders with `Reminders` (at most 500). Each has an opaque `id`, the time `at` it fires and `data`, a sealed payload (kind `reminder`, plaintext `{ "id", "text" }`) of at most 3 KiB decoded. Devices upload the reminders of the next days whenever their todos change; the server only learns the fire times. Reminders already sent stay known to the server (until a day after `at`), so uploading one again doesn't send it twice.
+
+Within a minute after `at` the server sends the base64 text of `data` to every subscription of the account with Web Push (RFC 8030, payload encrypted per RFC 8291, VAPID per RFC 8292), TTL one hour. The service worker unseals it and shows the notification.
+
 ## Client-side cryptography
 
 The server doesn't depend on any of this; it is here so clients agree.
 
 - The master seed is 32 random bytes, shown as a 24-word BIP-39 English phrase.
 - HKDF-SHA256 with empty salt derives 32-byte keys from the seed: info `ergon/v1/encryption` for the data key, info `ergon/v1/signing` for the Ed25519 private key seed. The account id is the Ed25519 public key.
-- Sealed data is `0x01 ‖ nonce (24 bytes) ‖ XChaCha20-Poly1305 ciphertext` of the gzipped JSON value, with associated data `ergon/v1/<kind>` where kind is `batch`, `snapshot` or `link`.
+- Sealed data is `0x01 ‖ nonce (24 bytes) ‖ XChaCha20-Poly1305 ciphertext` of the gzipped JSON value, with associated data `ergon/v1/<kind>` where kind is `batch`, `snapshot`, `link` or `reminder`.
 - Batch and snapshot plaintext: `{ "ops": Op[] }`, with `Op` as in `packages/core/src/model.ts`. Link plaintext: `{ "seed": base64 }`, sealed with a random 32-byte link key.

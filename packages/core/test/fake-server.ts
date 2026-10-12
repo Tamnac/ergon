@@ -46,6 +46,10 @@ export class FakeServer {
   readonly batches: { seq: number; account: string; id: string; data: string }[] = [];
   readonly snapshots = new Map<string, { seq: number; data: string }>();
   readonly links = new Map<string, string>();
+  /** Push subscriptions by device id. */
+  readonly pushes = new Map<string, { endpoint: string }>();
+  /** Latest reminders uploaded per account. */
+  readonly reminders = new Map<string, { id: string; at: number; data: string }[]>();
   readonly #challenges = new Set<string>();
   readonly #devices = new Map<string, Device>();
   #seq = 0;
@@ -73,7 +77,7 @@ export class FakeServer {
 
     switch (route) {
       case 'GET /info':
-        return reply(200, { version: 1, registration: this.registration }, 'Info');
+        return reply(200, { version: 1, registration: this.registration, vapid: 'BAUTH' }, 'Info');
       case 'POST /challenge': {
         const nonce = toBase64(randomBytes(32));
         this.#challenges.add(nonce);
@@ -172,6 +176,15 @@ export class FakeServer {
         }
         return reply(204);
       }
+      case 'PUT /push':
+        this.pushes.set(device!.id, body);
+        return reply(204);
+      case 'DELETE /push':
+        this.pushes.delete(device!.id);
+        return reply(204);
+      case 'PUT /reminders':
+        this.reminders.set(account, body.reminders);
+        return reply(204);
       case 'POST /links': {
         const id = toBase64Url(randomBytes(12));
         this.links.set(id, body.data);
@@ -198,7 +211,12 @@ export class FakeServer {
 
   /** Everything the server stores, for checking that no plaintext leaks. */
   dump(): string {
-    return JSON.stringify([...this.batches, ...this.snapshots.values(), ...this.links.values()]);
+    return JSON.stringify([
+      ...this.batches,
+      ...this.snapshots.values(),
+      ...this.links.values(),
+      ...this.reminders.values(),
+    ]);
   }
 }
 
@@ -207,6 +225,8 @@ const requests: Record<string, string> = {
   'POST /batches': 'BatchPush',
   'PUT /snapshot': 'Snapshot',
   'POST /links': 'LinkCreate',
+  'PUT /push': 'PushSubscription',
+  'PUT /reminders': 'Reminders',
 };
 
 function reply(status: number, body?: unknown, name?: string): Response {

@@ -52,6 +52,9 @@ func newHarness(t *testing.T, cfg Config, web fs.FS) *harness {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { _ = st.Close() })
+	if cfg.VAPID == "" {
+		cfg.VAPID = "BAUTH"
+	}
 	if cfg.Registration == "" {
 		cfg.Registration = RegistrationOpen
 	}

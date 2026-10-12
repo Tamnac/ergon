@@ -32,6 +32,8 @@ export const [settingsOpen, setSettingsOpen] = createSignal(false);
 export const [helpOpen, setHelpOpen] = createSignal(false);
 /** Todo whose repetition is being edited. */
 export const [repeating, setRepeating] = createSignal<Todo | null>(null);
+/** Todo whose reminder is being edited. */
+export const [reminding, setReminding] = createSignal<Todo | null>(null);
 /** What the phone layout shows. */
 export const [mobileView, setMobileView] = persistedSignal<'days' | 'lists'>(
   'ergon.mobileView',

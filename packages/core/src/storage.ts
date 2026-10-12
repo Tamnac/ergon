@@ -1,5 +1,6 @@
 import type { DateStr } from './date';
 import type { Change, Entity, List, ListGroup, Recurrence, Settings, Todo } from './model';
+import type { Reminder } from './reminder';
 
 export type ChangeListener = (entities: ReadonlySet<Entity>) => void;
 
@@ -22,6 +23,11 @@ export interface Storage {
   todosBetween(from: DateStr, to: DateStr, today: DateStr): Promise<Todo[]>;
   /** Marks for todos (not headings) whose effective date is in `[from, to]`. */
   todoMarks(from: DateStr, to: DateStr, today: DateStr): Promise<TodoMark[]>;
+  /**
+   * Reminders of undone todos (including virtual occurrences) dated in `[from, to]`. They
+   * are not rolled over: a missed reminder doesn't repeat the next day.
+   */
+  reminders(from: DateStr, to: DateStr): Promise<Reminder[]>;
   listTodos(): Promise<Todo[]>;
   recurrences(): Promise<Recurrence[]>;
   /** Stored occurrences of a recurrence, including skipped ones. */

@@ -172,6 +172,7 @@ function reshape(
       text: recurrence.text,
       kind: recurrence.kind,
       order: recurrence.order,
+      reminder: recurrence.reminder,
       rrule: formatRule(after),
       startDate: at,
       deleted: false,
@@ -196,6 +197,22 @@ export function editTodo(todo: Todo, input: string, scope: Scope = 'this') {
     await commit(
       reshape(series, scope === 'all' ? recurrence.startDate : at, entry, (t) =>
         t.id === todo.id || unchanged(t) ? entry : {},
+      ),
+    );
+  });
+}
+
+/** Sets the time (`HH:MM`) a day todo reminds at, or with null removes the reminder. */
+export function setReminder(todo: Todo, reminder: string | null, scope: Scope = 'this') {
+  return serial(async () => {
+    const series = scope === 'this' ? undefined : await seriesOf(todo);
+    if (!series) return commit(todoChanges(todo, { reminder }));
+    const { recurrence, at } = series;
+    // Occurrences with a reminder of their own keep it.
+    const unchanged = (t: Todo) => t.reminder === recurrence.reminder;
+    await commit(
+      reshape(series, scope === 'all' ? recurrence.startDate : at, { reminder }, (t) =>
+        t.id === todo.id || unchanged(t) ? { reminder } : {},
       ),
     );
   });
@@ -226,9 +243,17 @@ export function setRepeat(todo: Todo, rrule: string | null, scope: 'following' |
       const date = effectiveDate(todo, today());
       if (rrule === null || date === null) return;
       const id = newId();
-      const { text, kind, order } = todo;
+      const { text, kind, order, reminder } = todo;
       return commit([
-        ...patch('recurrence', id, { rrule, startDate: date, text, kind, order, deleted: false }),
+        ...patch('recurrence', id, {
+          rrule,
+          startDate: date,
+          text,
+          kind,
+          order,
+          reminder,
+          deleted: false,
+        }),
         ...todoChanges(todo, { date, recurrenceId: id, occurrence: date }),
       ]);
     }

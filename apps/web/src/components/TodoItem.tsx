@@ -3,12 +3,14 @@ import { For, Show, createEffect, onMount } from 'solid-js';
 import { makeDraggable } from '../lib/dnd';
 import { cancelCompletion, isCompleting, playCompletion } from '../lib/effects';
 import { linkify } from '../lib/links';
+import { formatTime } from '../lib/time';
 import { deleteTodo, editTodo, moveByDays, moveTodo, parseEntry, setDone } from '../state/actions';
 import {
   editingId,
   focusRequest,
   setEditingId,
   setFocusRequest,
+  setReminding,
   setRepeating,
 } from '../state/view';
 import { Icon } from './Icon';
@@ -104,6 +106,10 @@ export function TodoItem(props: { todo: Todo; columnKey: string }) {
         if (!onDay()) return;
         setRepeating(props.todo);
         break;
+      case 'b':
+        if (!onDay() || heading()) return;
+        setReminding(props.todo);
+        break;
       case '>':
         void moveByDays(props.todo, 1);
         break;
@@ -164,6 +170,24 @@ export function TodoItem(props: { todo: Todo; columnKey: string }) {
                 </For>
               </span>
             </span>
+            <Show when={onDay() && !heading()}>
+              <button
+                type="button"
+                class="todo-reminder icon-button"
+                classList={{ 'is-on': props.todo.reminder !== null }}
+                tabIndex={-1}
+                aria-label="Reminder"
+                title={
+                  props.todo.reminder ? `Reminds at ${formatTime(props.todo.reminder)}` : 'Remind'
+                }
+                onClick={() => setReminding(props.todo)}
+              >
+                <Icon name="bell" />
+                <Show when={props.todo.reminder}>
+                  {(time) => <span class="todo-reminder-time">{formatTime(time())}</span>}
+                </Show>
+              </button>
+            </Show>
             <Show when={onDay()}>
               <button
                 type="button"

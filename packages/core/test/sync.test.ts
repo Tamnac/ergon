@@ -4,16 +4,20 @@ import {
   createDeviceLink,
   Database,
   deriveKeys,
+  fromBase64,
   generateSeed,
   loadCredentials,
   patch,
   randomBytes,
   redeemDeviceLink,
+  reminderKey,
   signIn,
   signOut,
   SyncApi,
   SyncEngine,
   toBase64,
+  unseal,
+  uploadReminders,
   type Change,
   type SyncOptions,
 } from '../src';
@@ -263,5 +267,40 @@ describe('accounts', () => {
     expect(server.dump()).not.toContain(link.key);
     expect(await redeemDeviceLink(link, server.fetch)).toEqual(seed);
     await expect(redeemDeviceLink(link, server.fetch)).rejects.toMatchObject({ code: 'not_found' });
+  });
+});
+
+describe('reminders', () => {
+  it('uploads sealed reminders under opaque ids', async () => {
+    const server = new FakeServer();
+    const { db } = await device(server, generateSeed());
+    const credentials = (await loadCredentials(db))!;
+    const reminders = [{ id: 'todo-1', at: 1_790_000_000_000, text: 'Call the dentist' }];
+    await uploadReminders(credentials, reminders, server.fetch);
+    await uploadReminders(credentials, reminders, server.fetch);
+
+    const [uploaded, ...rest] = server.reminders.get(
+      deriveKeys(fromBase64(credentials.seed)).account,
+    )!;
+    expect(rest).toEqual([]);
+    expect(uploaded?.at).toBe(1_790_000_000_000);
+    expect(server.dump()).not.toContain('Call the dentist');
+    expect(server.dump()).not.toContain('todo-1');
+    const key = fromBase64(reminderKey(credentials));
+    expect(await unseal(key, 'reminder', uploaded!.data)).toEqual({
+      id: 'todo-1',
+      text: 'Call the dentist',
+    });
+  });
+
+  it('registers and removes push subscriptions per device', async () => {
+    const server = new FakeServer();
+    const { db } = await device(server, generateSeed());
+    const { server: url, token, deviceId } = (await loadCredentials(db))!;
+    const api = new SyncApi(url, token, server.fetch);
+    await api.putPush({ endpoint: 'https://push.test/1', p256dh: 'BNcR', auth: 'tBHI' });
+    expect(server.pushes.get(deviceId)?.endpoint).toBe('https://push.test/1');
+    await api.deletePush();
+    expect(server.pushes.size).toBe(0);
   });
 });

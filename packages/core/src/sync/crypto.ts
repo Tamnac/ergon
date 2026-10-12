@@ -1,7 +1,7 @@
 import { xchacha20poly1305 } from '@noble/ciphers/chacha.js';
 
 /** What sealed data is for; bound to the ciphertext so one can't pass for another. */
-export type SealKind = 'batch' | 'snapshot' | 'link';
+export type SealKind = 'batch' | 'snapshot' | 'link' | 'reminder';
 
 const VERSION = 1;
 const NONCE_LENGTH = 24;

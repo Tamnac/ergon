@@ -15,6 +15,7 @@ function todo(date: string | null, extra: Partial<Todo> = {}): Todo {
     recurrenceId: null,
     occurrence: null,
     skipped: false,
+    reminder: null,
     deleted: false,
     ...extra,
   };

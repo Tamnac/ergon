@@ -6,6 +6,8 @@ export type Registration = 'open' | 'invite' | 'closed';
 export interface Info {
   version: 1;
   registration: Registration;
+  /** Base64url public key for Web Push subscriptions. */
+  vapid: string;
 }
 export interface Session {
   token: string;
@@ -31,6 +33,19 @@ export interface Batches {
 }
 export interface Snapshot {
   seq: number;
+  data: string;
+}
+
+/** A browser push subscription, as `PushSubscription.toJSON()` gives its parts. */
+export interface PushSubscriptionInfo {
+  endpoint: string;
+  p256dh: string;
+  auth: string;
+}
+/** A sealed reminder payload due at `at` (Unix milliseconds). */
+export interface SealedReminder {
+  id: string;
+  at: number;
   data: string;
 }
 
@@ -129,6 +144,18 @@ export class SyncApi {
 
   async putSnapshot(snapshot: Snapshot): Promise<void> {
     await this.#request('PUT', '/snapshot', snapshot);
+  }
+
+  async putPush(subscription: PushSubscriptionInfo): Promise<void> {
+    await this.#request('PUT', '/push', subscription);
+  }
+
+  async deletePush(): Promise<void> {
+    await this.#request('DELETE', '/push');
+  }
+
+  async putReminders(reminders: SealedReminder[]): Promise<void> {
+    await this.#request('PUT', '/reminders', { reminders });
   }
 
   createLink(data: string): Promise<{ id: string; expires: number }> {

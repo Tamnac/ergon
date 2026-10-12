@@ -83,6 +83,11 @@ export const migrations: readonly string[] = [
     value TEXT NOT NULL
   ) WITHOUT ROWID;
   `,
+  `
+  ALTER TABLE todo ADD COLUMN reminder TEXT;
+  ALTER TABLE recurrence ADD COLUMN reminder TEXT;
+  ALTER TABLE settings ADD COLUMN "reminderTime" TEXT;
+  `,
 ];
 
 export async function migrate(driver: SqlDriver): Promise<void> {

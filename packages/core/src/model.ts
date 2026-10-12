@@ -23,6 +23,8 @@ export interface Todo {
   /** Date the recurrence generated this occurrence for; kept when it moves. */
   occurrence: DateStr | null;
   skipped: boolean;
+  /** Local time of day (`HH:MM`) to remind at on `date`; a virtual occurrence takes its recurrence's. */
+  reminder: string | null;
   deleted: boolean;
   /** Computed from its recurrence, not stored. */
   virtual?: true;
@@ -37,6 +39,8 @@ export interface Recurrence {
   text: string;
   kind: TodoKind;
   order: string;
+  /** Local time of day (`HH:MM`) every occurrence reminds at. */
+  reminder: string | null;
   deleted: boolean;
 }
 
@@ -63,6 +67,8 @@ export interface Settings {
   /** 0 = Sunday … 6 = Saturday, null = locale default */
   weekStart: number | null;
   condensedWeekends: boolean;
+  /** Time of day (`HH:MM`) for reminders set without choosing one. */
+  reminderTime: string;
 }
 
 export interface Rows {
@@ -99,9 +105,18 @@ export const defaults: { [E in Entity]: Fields<E> } = {
     recurrenceId: null,
     occurrence: null,
     skipped: false,
+    reminder: null,
     deleted: false,
   },
-  recurrence: { rrule: '', startDate: '', text: '', kind: 'todo', order: '', deleted: false },
+  recurrence: {
+    rrule: '',
+    startDate: '',
+    text: '',
+    kind: 'todo',
+    order: '',
+    reminder: null,
+    deleted: false,
+  },
   list: { name: '', groupId: '', order: '', deleted: false },
   listGroup: { name: '', order: '', deleted: false },
   settings: {
@@ -110,6 +125,7 @@ export const defaults: { [E in Entity]: Fields<E> } = {
     dayCount: 5,
     weekStart: null,
     condensedWeekends: false,
+    reminderTime: '09:00',
   },
 };
 

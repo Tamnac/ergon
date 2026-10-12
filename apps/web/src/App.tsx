@@ -5,6 +5,7 @@ import { Header } from './components/Header';
 import { HelpDialog } from './components/HelpDialog';
 import { HistoryZoom } from './components/HistoryZoom';
 import { ListsPanel, TabBar } from './components/ListsPanel';
+import { ReminderDialog } from './components/ReminderDialog';
 import { RepeatDialog } from './components/RepeatDialog';
 import { ScopeDialog } from './components/ScopeDialog';
 import { SettingsDialog } from './components/SettingsDialog';
@@ -17,6 +18,7 @@ import { addToToday, installShortcuts } from './lib/shortcuts';
 import { isPhone } from './lib/viewport';
 import { addGroup } from './state/actions';
 import { groups, groupsReady, settings, settingsReady } from './state/data';
+import { installReminders } from './state/reminders';
 import { storageError } from './state/storage';
 import { pendingLink, setSyncOpen } from './state/sync';
 import { mobileView } from './state/view';
@@ -47,6 +49,7 @@ export function App() {
   onMount(() => {
     if (isDesktop) onCleanup(installDesktop(addToToday));
   });
+  installReminders();
   onMount(() => {
     if (pendingLink()) setSyncOpen(true);
   });
@@ -84,6 +87,7 @@ export function App() {
       <SyncDialog />
       <HelpDialog />
       <RepeatDialog />
+      <ReminderDialog />
       <ScopeDialog />
       <Calendar />
       <HistoryZoom />

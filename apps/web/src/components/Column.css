@@ -125,20 +125,36 @@
 }
 
 .todo-delete,
-.todo-repeat {
+.todo-repeat,
+.todo-reminder {
   flex: none;
   width: 20px;
   height: 20px;
   opacity: 0;
 }
 
-.todo-repeat .icon {
+.todo-reminder {
+  width: auto;
+  min-width: 20px;
+  grid-auto-flow: column;
+  gap: var(--space-1);
+  padding-inline: 3px;
+}
+
+.todo-reminder-time {
+  font-size: var(--text-xs);
+  white-space: nowrap;
+}
+
+.todo-repeat .icon,
+.todo-reminder .icon {
   width: 13px;
   height: 13px;
 }
 
 .todo-repeat.is-on,
-.todo:is(:hover, :focus-within) :is(.todo-check, .todo-delete, .todo-repeat) {
+.todo-reminder.is-on,
+.todo:is(:hover, :focus-within) :is(.todo-check, .todo-delete, .todo-repeat, .todo-reminder) {
   opacity: 1;
 }
 
@@ -149,7 +165,8 @@
 @media (hover: none) {
   .todo-check,
   .todo-delete,
-  .todo-repeat {
+  .todo-repeat,
+  .todo-reminder {
     opacity: 1;
   }
 }

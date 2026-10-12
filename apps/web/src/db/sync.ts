@@ -5,10 +5,12 @@ import {
   generateSeed,
   loadCredentials,
   phraseToSeed,
+  reminderKey,
   redeemDeviceLink,
   seedToPhrase,
   signIn,
   signOut,
+  uploadReminders,
   SyncApi,
   SyncEngine,
   type Credentials,
@@ -16,6 +18,8 @@ import {
   type Device,
   type DeviceLink,
   type Info,
+  type PushSubscriptionInfo,
+  type Scheduled,
   type SyncStatus,
 } from '@ergon/core';
 
@@ -37,6 +41,12 @@ export interface SyncControl {
   revokeDevice(id: string): Promise<void>;
   signOut(): Promise<void>;
   syncNow(): Promise<void>;
+  /** The server's Web Push key, and the key (base64) the service worker unseals reminders with. */
+  pushSetup(): Promise<{ vapid: string; key: string }>;
+  putPush(subscription: PushSubscriptionInfo): Promise<void>;
+  deletePush(): Promise<void>;
+  /** Replaces the reminders the server pushes. */
+  putReminders(reminders: Scheduled[]): Promise<void>;
 }
 
 /** Held by an engine run, and while credentials change, so they never overlap across tabs. */
@@ -156,6 +166,14 @@ export function createSync(
     async syncNow() {
       send({ type: 'sync' });
     },
+    async pushSetup() {
+      const stored = await credentials();
+      const { vapid } = await new SyncApi(stored.server).info();
+      return { vapid, key: reminderKey(stored) };
+    },
+    putPush: async (subscription) => (await api()).putPush(subscription),
+    deletePush: async () => (await api()).deletePush(),
+    putReminders: async (reminders) => uploadReminders(await credentials(), reminders),
   };
 }
 

@@ -59,3 +59,27 @@ test('links a device with a one-time link', async ({ browser }) => {
   await c.getByRole('button', { name: 'Link device' }).click();
   await expect(c.getByRole('alert')).toHaveText(/expired or was already used/);
 });
+
+test('uploads upcoming reminders without their text', async ({ browser }) => {
+  const a = await newDevice(browser);
+  await openSync(a);
+  await a.getByRole('button', { name: 'Create account' }).click();
+  await a.getByRole('button', { name: 'I wrote it down' }).click();
+  await a.keyboard.press('Escape');
+
+  await addTodos(day(a, 1), 'Secret errand');
+  const upload = a.waitForRequest(
+    (request) =>
+      request.method() === 'PUT' &&
+      request.url().endsWith('/api/v1/reminders') &&
+      request.postData()?.includes('"at"') === true,
+  );
+  await todo(day(a, 1), 'Secret errand').getByRole('button', { name: 'Reminder' }).click();
+  await a.getByRole('dialog', { name: 'Reminder' }).getByRole('button', { name: 'Save' }).click();
+
+  const { reminders } = (await upload).postDataJSON() as {
+    reminders: { id: string; data: string }[];
+  };
+  expect(reminders).toHaveLength(1);
+  expect(JSON.stringify(reminders)).not.toContain('Secret errand');
+});

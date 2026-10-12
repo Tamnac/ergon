@@ -38,6 +38,7 @@ describe('Database', () => {
         recurrenceId: null,
         occurrence: null,
         skipped: false,
+        reminder: null,
         deleted: false,
       },
     ]);

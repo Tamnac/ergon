@@ -4,10 +4,17 @@
     "invalid": [{ "error": "teapot", "message": "" }, { "error": "not_found" }]
   },
   "Info": {
-    "valid": [{ "version": 1, "registration": "invite" }],
+    "valid": [
+      {
+        "version": 1,
+        "registration": "invite",
+        "vapid": "BNcRdreALRFXTkOOUHK1EtK2wtaz5Ry4YfYCA_0QTpQtUbVlUls0VJXg7A8u-Ts1XbjhazAkj7I99e8QcYP7DkM"
+      }
+    ],
     "invalid": [
-      { "version": 2, "registration": "open" },
-      { "version": 1, "registration": "maybe" }
+      { "version": 2, "registration": "open", "vapid": "BNcR" },
+      { "version": 1, "registration": "maybe", "vapid": "BNcR" },
+      { "version": 1, "registration": "open" }
     ]
   },
   "Challenge": {
@@ -118,5 +125,29 @@
   "Link": {
     "valid": [{ "data": "AQIDBA==" }],
     "invalid": [{}]
+  },
+  "PushSubscription": {
+    "valid": [
+      {
+        "endpoint": "https://push.example.com/send/abc123",
+        "p256dh": "BNcRdreALRFXTkOOUHK1EtK2wtaz5Ry4YfYCA_0QTpQtUbVlUls0VJXg7A8u-Ts1XbjhazAkj7I99e8QcYP7DkM",
+        "auth": "tBHItJI5svbpez7KI4CCXg"
+      }
+    ],
+    "invalid": [
+      { "endpoint": "http://push.example.com/send/abc123", "p256dh": "BNcR", "auth": "tBHI" },
+      { "endpoint": "https://push.example.com/send/abc123", "p256dh": "BNcR" }
+    ]
+  },
+  "Reminders": {
+    "valid": [
+      { "reminders": [] },
+      { "reminders": [{ "id": "k2Zq9mV1xT4aYb7cD0eFgH", "at": 1790000600000, "data": "AQIDBA==" }] }
+    ],
+    "invalid": [
+      { "reminders": [{ "id": "k2Zq9m", "at": 1790000600000 }] },
+      { "reminders": [{ "id": "has space", "at": 1, "data": "AQIDBA==" }] },
+      { "reminders": [{ "id": "k2Zq9m", "at": -1, "data": "AQIDBA==" }] }
+    ]
   }
 }

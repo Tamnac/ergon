@@ -1,6 +1,6 @@
-import type { DayCount, Theme } from '@ergon/core';
+import { isTime, type DayCount, type Theme } from '@ergon/core';
 import { disable, enable, isEnabled } from '@tauri-apps/plugin-autostart';
-import { For, Show, createResource } from 'solid-js';
+import { For, Show, createResource, createSignal } from 'solid-js';
 import { updateSettings } from '../state/actions';
 import {
   closeToTray,
@@ -10,6 +10,13 @@ import {
   setCloseToTray,
 } from '../lib/desktop';
 import { settings } from '../state/data';
+import {
+  disableReminders,
+  enableReminders,
+  pushSupported,
+  remindersOn,
+  syncOn,
+} from '../state/reminders';
 import { setSettingsOpen, settingsOpen } from '../state/view';
 import { Dialog } from './Dialog';
 
@@ -128,10 +135,69 @@ export function SettingsDialog() {
         Condensed weekends
       </label>
 
+      <ReminderSettings />
+
       <Show when={isDesktop}>
         <DesktopSettings />
       </Show>
     </Dialog>
+  );
+}
+
+function ReminderSettings() {
+  const [error, setError] = createSignal<string>();
+  const available = () => isDesktop || (pushSupported && syncOn());
+
+  const toggle = async (on: boolean) => {
+    setError();
+    try {
+      await (on ? enableReminders() : disableReminders());
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : String(cause));
+    }
+  };
+
+  return (
+    <fieldset class="field">
+      <legend class="field-label">Reminders</legend>
+      <label class="field-row">
+        Default time
+        <input
+          class="input"
+          type="time"
+          required
+          value={settings.reminderTime}
+          onChange={(e) => {
+            if (isTime(e.currentTarget.value)) {
+              void updateSettings({ reminderTime: e.currentTarget.value });
+            }
+          }}
+        />
+      </label>
+      <label class="checkbox">
+        <input
+          type="checkbox"
+          checked={remindersOn() && available()}
+          disabled={!available()}
+          onChange={(e) => void toggle(e.currentTarget.checked)}
+        />
+        Remind me on this device
+      </label>
+      <Show when={!isDesktop && !available()}>
+        <span class="sync-hint">
+          {pushSupported
+            ? 'Sign in to sync to get reminders in the browser.'
+            : "This browser can't show reminders when Ergon is closed."}
+        </span>
+      </Show>
+      <Show when={error()}>
+        {(message) => (
+          <span class="sync-hint" role="alert">
+            {message()}
+          </span>
+        )}
+      </Show>
+    </fieldset>
   );
 }
 

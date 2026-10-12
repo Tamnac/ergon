@@ -5,6 +5,7 @@ export const storageMethods = [
   'write',
   'todosBetween',
   'todoMarks',
+  'reminders',
   'listTodos',
   'recurrences',
   'seriesTodos',
@@ -25,6 +26,10 @@ export const syncMethods = [
   'revokeDevice',
   'signOut',
   'syncNow',
+  'pushSetup',
+  'putPush',
+  'deletePush',
+  'putReminders',
 ] as const satisfies readonly (keyof SyncControl)[];
 
 export type StorageMethod = (typeof storageMethods)[number];

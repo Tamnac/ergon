@@ -1,4 +1,5 @@
-// Package store persists accounts, devices, batches, snapshots and device links in SQLite.
+// Package store persists accounts, devices, batches, snapshots, device links and
+// reminders in SQLite.
 package store
 
 import (
@@ -101,6 +102,31 @@ var migrations = []string{
 		data BLOB NOT NULL,
 		expires INTEGER NOT NULL
 	) STRICT;
+	`,
+	`
+	CREATE TABLE push_subscriptions (
+		device TEXT PRIMARY KEY REFERENCES devices (id) ON DELETE CASCADE,
+		account TEXT NOT NULL REFERENCES accounts (public_key),
+		endpoint TEXT NOT NULL UNIQUE,
+		p256dh TEXT NOT NULL,
+		auth TEXT NOT NULL
+	) STRICT;
+	CREATE INDEX push_subscriptions_account ON push_subscriptions (account);
+
+	CREATE TABLE reminders (
+		account TEXT NOT NULL REFERENCES accounts (public_key),
+		id TEXT NOT NULL,
+		at INTEGER NOT NULL,
+		data BLOB NOT NULL,
+		sent INTEGER NOT NULL DEFAULT 0,
+		PRIMARY KEY (account, id)
+	) STRICT, WITHOUT ROWID;
+	CREATE INDEX reminders_at ON reminders (at);
+
+	CREATE TABLE settings (
+		key TEXT PRIMARY KEY,
+		value TEXT NOT NULL
+	) STRICT, WITHOUT ROWID;
 	`,
 }
 

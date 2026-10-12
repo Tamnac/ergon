@@ -16,9 +16,13 @@ import (
 	"time"
 
 	"ergon/server/internal/api"
+	"ergon/server/internal/push"
 	"ergon/server/internal/store"
 	"ergon/server/internal/web"
 )
+
+// pushInterval is how often due reminders are sent.
+const pushInterval = 15 * time.Second
 
 func main() {
 	if err := run(); err != nil {
@@ -72,6 +76,11 @@ func env(key, def string) string {
 func serve(ctx context.Context, st *store.Store) error {
 	addr := env("ERGON_ADDR", ":8080")
 	cfg := api.Config{Registration: api.Registration(env("ERGON_REGISTRATION", string(api.RegistrationInvite)))}
+	pusher, err := push.New(ctx, st, env("ERGON_VAPID_SUBJECT", "mailto:ergon@localhost"), nil, nil)
+	if err != nil {
+		return err
+	}
+	cfg.VAPID = pusher.PublicKey()
 	switch cfg.Registration {
 	case api.RegistrationOpen, api.RegistrationClosed:
 	case api.RegistrationInvite:
@@ -101,6 +110,7 @@ func serve(ctx context.Context, st *store.Store) error {
 		BaseContext:       func(net.Listener) context.Context { return baseCtx },
 	}
 	srv.RegisterOnShutdown(cancelRequests)
+	go pusher.Run(ctx, pushInterval)
 
 	go func() {
 		<-ctx.Done()

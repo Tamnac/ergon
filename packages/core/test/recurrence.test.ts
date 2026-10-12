@@ -262,6 +262,7 @@ describe('virtualOccurrences', () => {
     text: 'Water plants',
     kind: 'todo',
     order: 'a5',
+    reminder: null,
     deleted: false,
   };
 
@@ -280,6 +281,7 @@ describe('virtualOccurrences', () => {
       recurrenceId: 'r',
       occurrence: '2026-09-26',
       skipped: false,
+      reminder: null,
       deleted: false,
       virtual: true,
     });
@@ -305,6 +307,7 @@ describe('virtualOccurrences', () => {
       'occurrence',
       'order',
       'recurrenceId',
+      'reminder',
       'skipped',
       'text',
     ]);

@@ -33,6 +33,8 @@ type Config struct {
 	Registration Registration
 	// Allowlist holds base64 public keys that may always register.
 	Allowlist []string
+	// VAPID is the public key (base64url) browsers subscribe to Web Push with.
+	VAPID string
 	// Now is the clock; nil means time.Now.
 	Now func() time.Time
 }
@@ -82,6 +84,9 @@ func New(cfg Config, st *store.Store, web fs.FS) http.Handler {
 	mux.HandleFunc("GET /api/v1/snapshot", s.auth(s.snapshot))
 	mux.HandleFunc("PUT /api/v1/snapshot", s.auth(s.putSnapshot))
 	mux.HandleFunc("GET /api/v1/events", s.auth(s.events))
+	mux.HandleFunc("PUT /api/v1/push", s.auth(s.putPush))
+	mux.HandleFunc("DELETE /api/v1/push", s.auth(s.deletePush))
+	mux.HandleFunc("PUT /api/v1/reminders", s.auth(s.putReminders))
 	mux.HandleFunc("POST /api/v1/links", s.auth(s.createLink))
 	mux.HandleFunc("GET /api/v1/links/{id}", s.link)
 	mux.Handle("GET /", static(web))
@@ -93,7 +98,7 @@ func health(w http.ResponseWriter, _ *http.Request) {
 }
 
 func (s *server) info(w http.ResponseWriter, _ *http.Request) {
-	writeJSON(w, http.StatusOK, map[string]any{"version": 1, "registration": s.cfg.Registration})
+	writeJSON(w, http.StatusOK, map[string]any{"version": 1, "registration": s.cfg.Registration, "vapid": s.cfg.VAPID})
 }
 
 func cors(next http.Handler) http.Handler {

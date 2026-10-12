@@ -3,6 +3,7 @@ import { Clock, randomNode, type Hlc } from '../hlc';
 import { wins } from '../merge';
 import { compareOrder, type Ordered } from '../order';
 import { occurrenceId, virtualOccurrences } from '../recurrence';
+import { isTime, type Reminder } from '../reminder';
 import {
   SETTINGS_ID,
   defaults,
@@ -189,6 +190,22 @@ export class Database implements Storage {
       return marks
         .toSorted((a, b) => (a.date !== b.date ? (a.date < b.date ? -1 : 1) : compareOrder(a, b)))
         .map(({ id, date, done, length }) => ({ id, date, done, length }));
+    });
+  }
+
+  reminders(from: DateStr, to: DateStr): Promise<Reminder[]> {
+    return this.#serial(async () => {
+      const stored = await this.#rows(
+        'todo',
+        `SELECT * FROM todo WHERE deleted = 0 AND skipped = 0 AND done = 0 AND kind = 'todo'
+         AND reminder IS NOT NULL AND date BETWEEN ? AND ?`,
+        [from, to],
+      );
+      const todos = [...stored, ...(await this.#virtualTodos(from, to))];
+      return todos
+        .filter((todo) => todo.kind === 'todo' && isTime(todo.reminder))
+        .map((todo) => ({ id: todo.id, date: todo.date!, time: todo.reminder!, text: todo.text }))
+        .toSorted((a, b) => (a.date + a.time < b.date + b.time ? -1 : 1));
     });
   }
 
