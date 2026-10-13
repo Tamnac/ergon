@@ -11,22 +11,22 @@ export function registerDropZone(element: HTMLElement, target: () => Target) {
 }
 
 export interface DraggableOptions {
-  disabled: () => boolean;
+  disabled: (down: PointerEvent) => boolean;
   onDrop: (target: Target, index: number) => void;
 }
 
 /**
- * Pointer-based dragging; `index` is the slot among the zone's other items. Touch drags
- * start with a long press so a swipe still scrolls.
+ * Pointer-based dragging; `index` is the slot among the zone's other items. Touch and pen
+ * drags start with a long press so a swipe still scrolls.
  */
 export function makeDraggable(element: HTMLElement, options: DraggableOptions) {
   element.dataset.dragItem = '';
   element.addEventListener('pointerdown', (down) => {
-    if (down.button !== 0 || options.disabled()) return;
+    if (down.button !== 0 || options.disabled(down)) return;
     if (document.documentElement.classList.contains('is-dragging')) return;
     if ((down.target as Element).closest('input, button, a')) return;
 
-    const touch = down.pointerType === 'touch';
+    const touch = down.pointerType !== 'mouse';
     let session: DragSession | undefined;
     const pressTimer = touch
       ? setTimeout(() => {

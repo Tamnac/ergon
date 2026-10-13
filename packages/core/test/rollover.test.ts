@@ -7,6 +7,7 @@ function todo(date: string | null, extra: Partial<Todo> = {}): Todo {
   return {
     id: 't',
     text: 't',
+    ink: null,
     done: false,
     date,
     listId: null,

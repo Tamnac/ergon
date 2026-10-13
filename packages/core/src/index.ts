@@ -1,5 +1,6 @@
 export * from './date';
 export * from './hlc';
+export * from './ink';
 export * from './merge';
 export * from './model';
 export * from './order';

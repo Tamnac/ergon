@@ -86,26 +86,44 @@ async function todosIn(target: Target): Promise<Todo[]> {
   return day.filter((t) => effectiveDate(t, today()) === target.date).toSorted(compareOrder);
 }
 
-export function parseEntry(input: string): Pick<Todo, 'text' | 'kind'> {
+/** What a todo shows: text or ink, never both. */
+export type Content = Pick<Todo, 'text' | 'ink' | 'kind'>;
+
+export const sameContent = (a: Content, b: Content) =>
+  a.text === b.text && a.ink === b.ink && a.kind === b.kind;
+
+const isEmpty = (content: Content) => !content.text && content.ink === null;
+
+export function parseEntry(input: string): Content {
   const heading = /^#\s*(.*)$/.exec(input.trim());
   const text = (heading ? heading[1]! : input).trim().slice(0, MAX_TEXT);
-  return { text, kind: heading ? 'heading' : 'todo' };
+  return { text, ink: null, kind: heading ? 'heading' : 'todo' };
 }
 
+const inkContent = (ink: string): Content => ({ text: '', ink: ink || null, kind: 'todo' });
+
 export function addTodo(target: Target, input: string) {
-  return serial(async () => {
-    const siblings = await todosIn(target);
-    const { order, rekeyed } = orderAt(siblings, siblings.length);
-    await commit([
-      ...patch('todo', newId(), {
-        ...parseEntry(input),
-        ...locationOf(target),
-        order,
-        done: false,
-      }),
-      ...reorderTodos(siblings, rekeyed),
-    ]);
-  });
+  return serial(() => add(target, parseEntry(input)));
+}
+
+/** Adds a handwritten todo; `ink` is from `encodeInk`. */
+export function addInkTodo(target: Target, ink: string) {
+  return serial(() => add(target, inkContent(ink)));
+}
+
+async function add(target: Target, content: Content) {
+  if (isEmpty(content)) return;
+  const siblings = await todosIn(target);
+  const { order, rekeyed } = orderAt(siblings, siblings.length);
+  await commit([
+    ...patch('todo', newId(), {
+      ...content,
+      ...locationOf(target),
+      order,
+      done: false,
+    }),
+    ...reorderTodos(siblings, rekeyed),
+  ]);
 }
 
 /** Which occurrences of a recurring todo an edit applies to. */
@@ -170,6 +188,7 @@ function reshape(
     ...patch('recurrence', recurrence.id, { rrule: formatRule(before) }),
     ...patch('recurrence', id, {
       text: recurrence.text,
+      ink: recurrence.ink,
       kind: recurrence.kind,
       order: recurrence.order,
       reminder: recurrence.reminder,
@@ -185,21 +204,27 @@ function reshape(
 }
 
 export function editTodo(todo: Todo, input: string, scope: Scope = 'this') {
-  return serial(async () => {
-    const entry = parseEntry(input);
-    if (!entry.text) return commit(await deletion(todo, 'this'));
-    if (entry.text === todo.text && entry.kind === todo.kind) return;
-    const series = scope === 'this' ? undefined : await seriesOf(todo);
-    if (!series) return commit(todoChanges(todo, entry));
-    const { recurrence, at } = series;
-    // Occurrences edited on their own keep their text.
-    const unchanged = (t: Todo) => t.text === recurrence.text && t.kind === recurrence.kind;
-    await commit(
-      reshape(series, scope === 'all' ? recurrence.startDate : at, entry, (t) =>
-        t.id === todo.id || unchanged(t) ? entry : {},
-      ),
-    );
-  });
+  return serial(() => setContent(todo, parseEntry(input), scope));
+}
+
+/** Replaces a todo's content with handwriting; empty ink deletes it. */
+export function editInk(todo: Todo, ink: string, scope: Scope = 'this') {
+  return serial(() => setContent(todo, inkContent(ink), scope));
+}
+
+async function setContent(todo: Todo, content: Content, scope: Scope) {
+  if (isEmpty(content)) return commit(await deletion(todo, 'this'));
+  if (sameContent(content, todo)) return;
+  const series = scope === 'this' ? undefined : await seriesOf(todo);
+  if (!series) return commit(todoChanges(todo, content));
+  const { recurrence, at } = series;
+  // Occurrences edited on their own keep their content.
+  const unchanged = (t: Todo) => sameContent(t, recurrence);
+  await commit(
+    reshape(series, scope === 'all' ? recurrence.startDate : at, content, (t) =>
+      t.id === todo.id || unchanged(t) ? content : {},
+    ),
+  );
 }
 
 /** Sets the time (`HH:MM`) a day todo reminds at, or with null removes the reminder. */
@@ -243,12 +268,13 @@ export function setRepeat(todo: Todo, rrule: string | null, scope: 'following' |
       const date = effectiveDate(todo, today());
       if (rrule === null || date === null) return;
       const id = newId();
-      const { text, kind, order, reminder } = todo;
+      const { text, ink, kind, order, reminder } = todo;
       return commit([
         ...patch('recurrence', id, {
           rrule,
           startDate: date,
           text,
+          ink,
           kind,
           order,
           reminder,

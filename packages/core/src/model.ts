@@ -14,6 +14,8 @@ export type TodoKind = 'todo' | 'heading';
 export interface Todo {
   id: string;
   text: string;
+  /** Handwriting from `encodeInk`; a todo has either ink or text. */
+  ink: string | null;
   done: boolean;
   date: DateStr | null;
   listId: string | null;
@@ -37,6 +39,7 @@ export interface Recurrence {
   rrule: string;
   startDate: DateStr;
   text: string;
+  ink: string | null;
   kind: TodoKind;
   order: string;
   /** Local time of day (`HH:MM`) every occurrence reminds at. */
@@ -92,11 +95,14 @@ export type Op = Change & { hlc: Hlc };
 export const SETTINGS_ID = 'settings';
 /** Longest todo text or list name, in characters. */
 export const MAX_TEXT = 500;
+/** Longest encoded ink, in characters. */
+export const MAX_INK = 16_000;
 
 /** Field defaults; also the list of known fields per entity. */
 export const defaults: { [E in Entity]: Fields<E> } = {
   todo: {
     text: '',
+    ink: null,
     done: false,
     date: null,
     listId: null,
@@ -112,6 +118,7 @@ export const defaults: { [E in Entity]: Fields<E> } = {
     rrule: '',
     startDate: '',
     text: '',
+    ink: null,
     kind: 'todo',
     order: '',
     reminder: null,

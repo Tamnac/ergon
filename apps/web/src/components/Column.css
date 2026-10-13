@@ -1,7 +1,12 @@
 .column {
+  --text-start: var(--space-2);
   display: flex;
   flex-direction: column;
   min-width: 0;
+}
+
+.app.is-phone .column {
+  --text-start: calc(2 * var(--space-2) + 14px);
 }
 
 .todo-list {

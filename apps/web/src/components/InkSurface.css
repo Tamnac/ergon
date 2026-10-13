@@ -1,0 +1,33 @@
+/* One row high, starting where todo text starts; ink may reach half a row above and below. */
+.ink-area {
+  position: absolute;
+  top: 0;
+  left: var(--text-start);
+  right: var(--space-2);
+  height: var(--row);
+}
+
+/* The huge viewBox makes `slice` scale by height only: 100 units per row from the left edge. */
+.ink-draft {
+  position: absolute;
+  inset: -50% 0;
+  width: 100%;
+  height: 200%;
+  overflow: hidden;
+  color: var(--accent);
+  fill: currentColor;
+  pointer-events: none;
+}
+
+.ink-surface {
+  position: absolute;
+  z-index: 2;
+  inset: 0;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.ink-surface.is-open {
+  inset: -50% 0;
+  cursor: crosshair;
+}

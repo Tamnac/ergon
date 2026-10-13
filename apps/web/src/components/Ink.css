@@ -1,0 +1,41 @@
+.ink {
+  position: relative;
+  flex: 0 1 auto;
+  align-self: stretch;
+  min-width: 0;
+  width: min(100%, calc(var(--row) * var(--ink-width)));
+  margin-right: auto;
+}
+
+.ink.is-rtl {
+  margin-right: 0;
+  margin-left: auto;
+}
+
+.ink svg {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 100%;
+  height: auto;
+  transform: translateY(-50%);
+  overflow: visible;
+  pointer-events: none;
+}
+
+.todo.is-done .ink {
+  color: var(--fg-muted);
+}
+
+.todo.is-done .ink::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: -2px;
+  right: -2px;
+  border-top: 1.5px solid var(--fg-muted);
+}
+
+.todo.is-done.is-completing .ink::after {
+  display: none;
+}

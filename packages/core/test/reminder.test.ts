@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { Database, fireAt, isTime, patch, schedule, todoChanges } from '../src';
+import { Database, fireAt, INK_LABEL, isTime, patch, schedule, todoChanges } from '../src';
 import { memoryDriver } from './sqlite';
 
 describe('reminder times', () => {
@@ -56,6 +56,12 @@ describe('Database reminders', () => {
       { id: 'a', date: today, time: '09:00', text: 'a' },
       { id: 'later', date: '2026-09-27', time: '07:15', text: 'later' },
     ]);
+  });
+
+  it('labels handwritten todos', async () => {
+    const db = await open();
+    await db.write(todo('ink', { text: '', ink: 'AQAB' }));
+    expect((await db.reminders(today, today))[0]?.text).toBe(INK_LABEL);
   });
 
   it('does not roll reminders over', async () => {

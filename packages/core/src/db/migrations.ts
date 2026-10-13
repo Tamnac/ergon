@@ -88,6 +88,10 @@ export const migrations: readonly string[] = [
   ALTER TABLE recurrence ADD COLUMN reminder TEXT;
   ALTER TABLE settings ADD COLUMN "reminderTime" TEXT;
   `,
+  `
+  ALTER TABLE todo ADD COLUMN ink TEXT;
+  ALTER TABLE recurrence ADD COLUMN ink TEXT;
+  `,
 ];
 
 export async function migrate(driver: SqlDriver): Promise<void> {

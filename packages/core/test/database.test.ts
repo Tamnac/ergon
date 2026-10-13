@@ -30,6 +30,7 @@ describe('Database', () => {
       {
         id: 'a',
         text: 'a',
+        ink: null,
         done: false,
         date: today,
         listId: null,

@@ -1,6 +1,7 @@
 import type { DateStr } from '../date';
 import { Clock, randomNode, type Hlc } from '../hlc';
 import { wins } from '../merge';
+import { INK_LABEL } from '../ink';
 import { compareOrder, type Ordered } from '../order';
 import { occurrenceId, virtualOccurrences } from '../recurrence';
 import { isTime, type Reminder } from '../reminder';
@@ -168,7 +169,8 @@ export class Database implements Storage {
   todoMarks(from: DateStr, to: DateStr, today: DateStr): Promise<TodoMark[]> {
     return this.#serial(async () => {
       const rows = await this.#driver.query(
-        `SELECT id, day, done, "order", length(text) AS length FROM (
+        `SELECT id, day, done, "order",
+           CASE WHEN ink IS NULL THEN length(text) ELSE ${INK_MARK_LENGTH} END AS length FROM (
            SELECT *, CASE WHEN ${ROLLS_OVER} THEN ? ELSE date END AS day FROM todo
            WHERE deleted = 0 AND skipped = 0 AND kind = 'todo'
            AND (date BETWEEN ? AND ? OR (${ROLLS_OVER}))
@@ -184,8 +186,9 @@ export class Database implements Storage {
       }));
       for (const todo of await this.#virtualTodos(from, to)) {
         if (todo.kind !== 'todo') continue;
-        const { id, date, order, text } = todo;
-        marks.push({ id, date: date!, done: false, length: text.length, order });
+        const { id, date, order, text, ink } = todo;
+        const length = ink === null ? text.length : INK_MARK_LENGTH;
+        marks.push({ id, date: date!, done: false, length, order });
       }
       return marks
         .toSorted((a, b) => (a.date !== b.date ? (a.date < b.date ? -1 : 1) : compareOrder(a, b)))
@@ -204,7 +207,12 @@ export class Database implements Storage {
       const todos = [...stored, ...(await this.#virtualTodos(from, to))];
       return todos
         .filter((todo) => todo.kind === 'todo' && isTime(todo.reminder))
-        .map((todo) => ({ id: todo.id, date: todo.date!, time: todo.reminder!, text: todo.text }))
+        .map((todo) => ({
+          id: todo.id,
+          date: todo.date!,
+          time: todo.reminder!,
+          text: todo.ink === null ? todo.text : INK_LABEL,
+        }))
         .toSorted((a, b) => (a.date + a.time < b.date + b.time ? -1 : 1));
     });
   }
@@ -369,6 +377,8 @@ export class Database implements Storage {
   }
 }
 
+/** Text length an ink todo counts as in calendar marks. */
+const INK_MARK_LENGTH = 20;
 /** SQL condition for todos that show on today instead of their date; binds `today`. */
 const ROLLS_OVER = 'done = 0 AND date < ? AND "recurrenceId" IS NULL';
 

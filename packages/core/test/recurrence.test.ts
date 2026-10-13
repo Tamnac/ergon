@@ -260,6 +260,7 @@ describe('virtualOccurrences', () => {
     rrule: 'FREQ=DAILY',
     startDate: '2026-09-26',
     text: 'Water plants',
+    ink: null,
     kind: 'todo',
     order: 'a5',
     reminder: null,
@@ -273,6 +274,7 @@ describe('virtualOccurrences', () => {
     expect(todos[0]).toEqual({
       id: 'r:2026-09-26',
       text: 'Water plants',
+      ink: null,
       done: false,
       date: '2026-09-26',
       listId: null,
@@ -302,6 +304,7 @@ describe('virtualOccurrences', () => {
       'date',
       'deleted',
       'done',
+      'ink',
       'kind',
       'listId',
       'occurrence',

@@ -1,4 +1,4 @@
-import { isTime, type DayCount, type Theme } from '@ergon/core';
+import { isTime, type DayCount, type InkDetail, type Theme } from '@ergon/core';
 import { disable, enable, isEnabled } from '@tauri-apps/plugin-autostart';
 import { For, Show, createResource, createSignal } from 'solid-js';
 import { updateSettings } from '../state/actions';
@@ -9,6 +9,14 @@ import {
   quickAddShortcut,
   setCloseToTray,
 } from '../lib/desktop';
+import {
+  inkDetail,
+  inkPressure,
+  inkSmoothing,
+  setInkDetail,
+  setInkPressure,
+  setInkSmoothing,
+} from '../lib/ink';
 import { settings } from '../state/data';
 import {
   disableReminders,
@@ -36,6 +44,10 @@ const themes: [Theme, string][] = [
   ['system', 'System'],
 ];
 const dayCounts: DayCount[] = [1, 3, 5, 7];
+const inkDetails: [InkDetail, string][] = [
+  ['fine', 'Fine'],
+  ['compact', 'Compact'],
+];
 const weekStarts: [string, string][] = [
   ['', 'Locale default'],
   ['1', 'Monday'],
@@ -137,6 +149,8 @@ export function SettingsDialog() {
 
       <ReminderSettings />
 
+      <HandwritingSettings />
+
       <Show when={isDesktop}>
         <DesktopSettings />
       </Show>
@@ -197,6 +211,46 @@ function ReminderSettings() {
           </span>
         )}
       </Show>
+    </fieldset>
+  );
+}
+
+function HandwritingSettings() {
+  return (
+    <fieldset class="field">
+      <legend class="field-label">Handwriting</legend>
+      <label class="checkbox">
+        <input
+          type="checkbox"
+          checked={inkSmoothing()}
+          onChange={(e) => setInkSmoothing(e.currentTarget.checked)}
+        />
+        Smooth strokes
+      </label>
+      <label class="checkbox">
+        <input
+          type="checkbox"
+          checked={inkPressure()}
+          onChange={(e) => setInkPressure(e.currentTarget.checked)}
+        />
+        Pressure changes stroke width
+      </label>
+      <div class="segmented" role="radiogroup" aria-label="Detail">
+        <For each={inkDetails}>
+          {([value, label]) => (
+            <label>
+              <input
+                type="radio"
+                name="inkDetail"
+                checked={inkDetail() === value}
+                onChange={() => setInkDetail(value)}
+              />
+              {label}
+            </label>
+          )}
+        </For>
+      </div>
+      <span class="sync-hint">Compact stores less detail. It applies to what you write next.</span>
     </fieldset>
   );
 }

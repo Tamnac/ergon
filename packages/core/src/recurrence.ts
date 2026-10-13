@@ -319,6 +319,7 @@ export function virtualOccurrences(
       .map((date) => ({
         id: occurrenceId(recurrence.id, date),
         text: recurrence.text,
+        ink: recurrence.ink,
         done: false,
         date,
         listId: null,

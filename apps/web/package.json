@@ -16,6 +16,7 @@
     "@journeyapps/wa-sqlite": "^2.0.6",
     "@tauri-apps/api": "^2.12.3",
     "@tauri-apps/plugin-autostart": "^2.7.0",
+    "perfect-freehand": "^1.2.3",
     "solid-js": "^1.9.15",
     "uqr": "^0.1.3"
   },

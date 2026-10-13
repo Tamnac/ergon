@@ -1,10 +1,20 @@
-import type { Todo } from '@ergon/core';
+import { decodeInk, encodeInk, type Stroke, type Todo } from '@ergon/core';
 import { For, Show, createEffect, onMount } from 'solid-js';
 import { makeDraggable } from '../lib/dnd';
 import { cancelCompletion, isCompleting, playCompletion } from '../lib/effects';
+import { inkDetail } from '../lib/ink';
 import { linkify } from '../lib/links';
 import { formatTime } from '../lib/time';
-import { deleteTodo, editTodo, moveByDays, moveTodo, parseEntry, setDone } from '../state/actions';
+import {
+  deleteTodo,
+  editInk,
+  editTodo,
+  moveByDays,
+  moveTodo,
+  parseEntry,
+  sameContent,
+  setDone,
+} from '../state/actions';
 import {
   editingId,
   focusRequest,
@@ -14,21 +24,29 @@ import {
   setRepeating,
 } from '../state/view';
 import { Icon } from './Icon';
+import { Ink } from './Ink';
+import { InkSurface } from './InkSurface';
 import { InlineInput } from './InlineInput';
 import { askScope } from './ScopeDialog';
 
 export function TodoItem(props: { todo: Todo; columnKey: string }) {
   let item!: HTMLLIElement;
   let label: HTMLSpanElement | undefined;
+  let inkRect: DOMRect | undefined;
 
   const editing = () => editingId() === props.todo.id;
   const heading = () => props.todo.kind === 'heading';
   const recurring = () => props.todo.recurrenceId !== null;
   const onDay = () => props.todo.date !== null;
+  const inked = () => !!props.todo.ink;
+  /** Another todo may have started editing meanwhile. */
+  const stopEditing = () => {
+    if (editing()) setEditingId(null);
+  };
 
   onMount(() =>
     makeDraggable(item, {
-      disabled: editing,
+      disabled: (down) => editing() || (down.pointerType === 'pen' && inked()),
       onDrop: (target, index) => void moveTodo(props.todo, target, index),
     }),
   );
@@ -65,13 +83,23 @@ export function TodoItem(props: { todo: Todo; columnKey: string }) {
     const todo = props.todo;
     const entry = parseEntry(value);
     if (!entry.text) return remove();
-    if (entry.text === todo.text && entry.kind === todo.kind) return;
-    const scope =
-      todo.recurrenceId === null
-        ? 'this'
-        : await askScope('Edit repeating todo', ['this', 'following', 'all'] as const);
+    if (sameContent(entry, todo)) return;
+    const scope = await editScope(todo);
     if (scope) await editTodo(todo, value, scope);
   };
+
+  const saveInk = async (strokes: Stroke[]) => {
+    const todo = props.todo;
+    const ink = encodeInk(strokes, inkDetail());
+    if (!ink) return remove();
+    const scope = await editScope(todo);
+    if (scope) await editInk(todo, ink, scope);
+  };
+
+  const editScope = (todo: Todo) =>
+    todo.recurrenceId === null
+      ? 'this'
+      : askScope('Edit repeating todo', ['this', 'following', 'all'] as const);
 
   const focusSibling = (forward: boolean) => {
     let next = forward ? item.nextElementSibling : item.previousElementSibling;
@@ -93,6 +121,7 @@ export function TodoItem(props: { todo: Todo; columnKey: string }) {
         focusSibling(true);
         break;
       case 'Enter':
+        if (inked()) return;
         setEditingId(props.todo.id);
         break;
       case ' ':
@@ -136,7 +165,14 @@ export function TodoItem(props: { todo: Todo; columnKey: string }) {
       data-id={props.todo.id}
       onKeyDown={onKeyDown}
       onClick={(event) => {
-        if (!(event.target as Element).closest('a, button')) setEditingId(props.todo.id);
+        if (inked() || (event.target as Element).closest('a, button')) return;
+        setEditingId(props.todo.id);
+      }}
+      onPointerDown={(event) => {
+        if (event.pointerType !== 'pen' || !inked() || editing()) return;
+        if ((event.target as Element).closest('button')) return;
+        inkRect = label?.getBoundingClientRect();
+        setEditingId(props.todo.id);
       }}
     >
       <Show
@@ -155,21 +191,28 @@ export function TodoItem(props: { todo: Todo; columnKey: string }) {
                 <Icon name="check" />
               </button>
             </Show>
-            <span class="todo-text">
-              <span ref={label} class="todo-label">
-                <For each={linkify(props.todo.text)}>
-                  {(segment) =>
-                    segment.href ? (
-                      <a href={segment.href} target="_blank" rel="noopener noreferrer">
-                        {segment.text}
-                      </a>
-                    ) : (
-                      segment.text
-                    )
-                  }
-                </For>
-              </span>
-            </span>
+            <Show
+              when={props.todo.ink}
+              fallback={
+                <span class="todo-text">
+                  <span ref={label} class="todo-label">
+                    <For each={linkify(props.todo.text)}>
+                      {(segment) =>
+                        segment.href ? (
+                          <a href={segment.href} target="_blank" rel="noopener noreferrer">
+                            {segment.text}
+                          </a>
+                        ) : (
+                          segment.text
+                        )
+                      }
+                    </For>
+                  </span>
+                </span>
+              }
+            >
+              {(ink) => <Ink ref={(element) => (label = element)} ink={ink()} />}
+            </Show>
             <Show when={onDay() && !heading()}>
               <button
                 type="button"
@@ -213,20 +256,37 @@ export function TodoItem(props: { todo: Todo; columnKey: string }) {
           </>
         }
       >
-        <InlineInput
-          label="Edit todo"
-          value={heading() ? `# ${props.todo.text}` : props.todo.text}
-          onCommit={(value, reason) => {
-            setEditingId(null);
-            void save(value).then(() => {
-              if (reason === 'enter') focusSelf();
-            });
-          }}
-          onCancel={() => {
-            setEditingId(null);
-            focusSelf();
-          }}
-        />
+        <Show
+          when={props.todo.ink}
+          fallback={
+            <InlineInput
+              label="Edit todo"
+              value={heading() ? `# ${props.todo.text}` : props.todo.text}
+              onCommit={(value, reason) => {
+                stopEditing();
+                void save(value).then(() => {
+                  if (reason === 'enter') focusSelf();
+                });
+              }}
+              onCancel={() => {
+                stopEditing();
+                focusSelf();
+              }}
+            />
+          }
+        >
+          {(ink) => (
+            <InkSurface
+              initial={decodeInk(ink())?.strokes ?? []}
+              shownIn={inkRect}
+              onCommit={(strokes) => {
+                stopEditing();
+                void saveInk(strokes);
+              }}
+              onCancel={stopEditing}
+            />
+          )}
+        </Show>
       </Show>
     </li>
   );
