@@ -70,6 +70,12 @@
   background: none;
 }
 
+.todo:focus-visible,
+.todo.is-anchor {
+  box-shadow: var(--ring-1);
+  animation: var(--ring-in);
+}
+
 .todo.is-editing::after,
 .todo-add::after {
   content: '';

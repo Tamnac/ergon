@@ -64,6 +64,32 @@ button:disabled {
   }
 }
 
+@keyframes frame-in {
+  from {
+    inset: 0;
+  }
+}
+
+/*
+ * Surfaces over content: ring 1 and the veil are shadows. The outer ring is a 1px shadow around an
+ * empty box on ::after, because a plain outer shadow would fill the gap and hide what is behind.
+ */
+.menu,
+.dialog.is-anchored {
+  overflow: visible;
+  box-shadow: var(--ring-2-veiled);
+}
+
+.menu::after,
+.dialog.is-anchored::after {
+  content: '';
+  position: absolute;
+  inset: calc(1px - var(--ring-2-reach));
+  box-shadow: 0 0 0 1px var(--ring-c2);
+  pointer-events: none;
+  animation: var(--frame-in);
+}
+
 .icon {
   display: block;
 }

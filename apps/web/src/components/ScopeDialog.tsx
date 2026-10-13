@@ -1,12 +1,7 @@
 import { For, createSignal } from 'solid-js';
 import type { Scope } from '../state/actions';
 import { Dialog } from './Dialog';
-
-const labels: Record<Scope, string> = {
-  this: 'Only this one',
-  following: 'This and following',
-  all: 'All',
-};
+import { scopeLabels } from './ScopeField';
 
 interface Prompt {
   title: string;
@@ -42,7 +37,7 @@ export function ScopeDialog() {
               autofocus={index() === 0}
               onClick={() => close(scope)}
             >
-              {labels[scope]}
+              {scopeLabels[scope]}
             </button>
           )}
         </For>

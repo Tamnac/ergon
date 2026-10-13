@@ -51,6 +51,19 @@ test('jumps to a date and shows todo marks in the calendar', async ({ page }) =>
   await expect(dayColumns(page).first()).toHaveAttribute('data-target', `date:${dateStr(30)}`);
 });
 
+test('shows several months in a wide calendar and one in a narrow one', async ({ page }) => {
+  await openApp(page);
+  const calendar = page.getByRole('dialog', { name: 'Calendar' });
+  await page.getByRole('button', { name: 'Calendar' }).click();
+  await expect(calendar.locator('.calendar-month')).toHaveCount(3);
+  await page.keyboard.press('Escape');
+  await expect(calendar).toBeHidden();
+
+  await page.setViewportSize({ width: 400, height: 800 });
+  await page.getByRole('button', { name: 'Calendar' }).click();
+  await expect(calendar.locator('.calendar-month')).toHaveCount(1);
+});
+
 test('toggles the shortcuts with Ctrl+/', async ({ page }) => {
   await openApp(page);
   const help = page.getByRole('dialog', { name: 'Shortcuts' });

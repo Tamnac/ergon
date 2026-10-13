@@ -6,7 +6,7 @@ import {
   type DateStr,
   type TodoMark,
 } from '@ergon/core';
-import { For, Show, createEffect, createMemo, createSignal } from 'solid-js';
+import { For, Show, createEffect, createMemo, createSignal, onCleanup, onMount } from 'solid-js';
 import { reducedMotion } from '../lib/viewport';
 import { groupBy, weekStart } from '../state/data';
 import { createQuery } from '../state/query';
@@ -36,6 +36,24 @@ const [open, setOpen] = createSignal(false);
 export { open as calendarOpen };
 
 export const openCalendar = () => setOpen(true);
+
+const GRID_DAYS = 42;
+const GAP = 32;
+/** The smallest a month is shown at; as many as fit are shown. */
+const MONTH_SIZE = { width: 320, height: 360 };
+
+/** The size of the area the months are laid out in. */
+const [area, setArea] = createSignal({ width: 0, height: 0 });
+
+/** Layout size, unaffected by the zoom animation's transform. */
+const measure = (element: Element | null) => {
+  if (element) setArea({ width: element.clientWidth, height: element.clientHeight });
+};
+
+/** How many months of at least `min` fit along `space`. */
+const fit = (space: number, min: number) => Math.max(1, Math.floor((space + GAP) / (min + GAP)));
+
+const gridStart = (month: DateStr) => startOfWeek(month, weekStart());
 
 const markWidth = (length: number) => Math.round(Math.min(28, 6 + length / 2));
 
@@ -96,9 +114,13 @@ export function Calendar() {
     if (!open() || dialog.open) return;
     closing = false;
     dialog.showModal();
-    dialog.querySelector<HTMLElement>('.calendar-day[tabindex="0"]')?.focus();
-    const view = !reducedMotion() && camera(dialog, visibleDays());
-    if (view) zoom(dialog, view, true);
+    measure(dialog.querySelector('.calendar-months'));
+    // The months are laid out for the measured size once this update has run.
+    queueMicrotask(() => {
+      dialog.querySelector<HTMLElement>('.calendar-day[tabindex="0"]')?.focus();
+      const view = !reducedMotion() && camera(dialog, visibleDays());
+      if (view) zoom(dialog, view, true);
+    });
   });
 
   /** Zooms back into the days being shown (after a pick, the new ones), then closes. */
@@ -124,7 +146,7 @@ export function Calendar() {
       onClose={() => setOpen(false)}
     >
       <Show when={open()}>
-        <Month
+        <MonthView
           onPick={(date) => {
             jumpTo(date);
             void close();
@@ -136,29 +158,53 @@ export function Calendar() {
   );
 }
 
-function Month(props: { onPick: (date: DateStr) => void; onClose: () => void }) {
+function MonthView(props: { onPick: (date: DateStr) => void; onClose: () => void }) {
   const range = () => ({
     from: visibleDays()[0] ?? today(),
     to: visibleDays().at(-1) ?? today(),
   });
   const inRange = (date: DateStr) => date >= range().from && date <= range().to;
   const [cursor, setCursor] = createSignal(inRange(today()) ? today() : range().from);
-  const month = () => cursor().slice(0, 7);
-  const days = createMemo(() => {
-    const first = startOfWeek(`${month()}-01`, weekStart());
-    return Array.from({ length: 42 }, (_, i) => addDays(first, i));
+  const cursorMonth = () => `${cursor().slice(0, 7)}-01`;
+  const layout = createMemo(
+    () => ({
+      columns: fit(area().width, MONTH_SIZE.width),
+      rows: fit(area().height, MONTH_SIZE.height),
+    }),
+    undefined,
+    { equals: (a, b) => a.columns === b.columns && a.rows === b.rows },
+  );
+  const count = () => layout().columns * layout().rows;
+  const months = createMemo(() => {
+    const before = Math.floor((count() - 1) / 2);
+    return Array.from({ length: count() }, (_, i) => addMonths(cursorMonth(), i - before));
   });
   const [marks] = createQuery<TodoMark[]>(
     ['todo', 'recurrence'],
-    () => storage.todoMarks(days()[0]!, days().at(-1)!, today()),
+    () =>
+      storage.todoMarks(
+        gridStart(months()[0]!),
+        addDays(gridStart(months().at(-1)!), GRID_DAYS - 1),
+        today(),
+      ),
     [],
   );
   const marksByDate = createMemo(() => groupBy(marks, (mark) => mark.date));
-  let grid!: HTMLDivElement;
+  const title = () =>
+    count() === 1
+      ? monthFormat.format(parseDate(cursorMonth()))
+      : monthFormat.formatRange(parseDate(months()[0]!), parseDate(months().at(-1)!));
+  let root!: HTMLDivElement;
+
+  onMount(() => {
+    const observer = new ResizeObserver(() => measure(root));
+    observer.observe(root);
+    onCleanup(() => observer.disconnect());
+  });
 
   const moveTo = (date: DateStr) => {
     setCursor(date);
-    grid.querySelector<HTMLElement>(`[data-date="${date}"]`)?.focus();
+    root.querySelector<HTMLElement>(`[data-date="${date}"]`)?.focus();
   };
 
   const onKeyDown = (event: KeyboardEvent) => {
@@ -179,7 +225,7 @@ function Month(props: { onPick: (date: DateStr) => void; onClose: () => void }) 
           label="Previous month"
           onClick={() => setCursor(addMonths(cursor(), -1))}
         />
-        <h2 class="calendar-title">{monthFormat.format(parseDate(`${month()}-01`))}</h2>
+        <h2 class="calendar-title">{title()}</h2>
         <IconButton
           icon="chevron-right"
           label="Next month"
@@ -187,51 +233,100 @@ function Month(props: { onPick: (date: DateStr) => void; onClose: () => void }) 
         />
         <IconButton class="calendar-close" icon="close" label="Close" onClick={props.onClose} />
       </header>
+      <div
+        ref={root}
+        class="calendar-months"
+        classList={{ 'is-multi': count() > 1 }}
+        style={{
+          'grid-template-columns': `repeat(${layout().columns}, minmax(0, 1fr))`,
+          'grid-template-rows': `repeat(${layout().rows}, minmax(0, 1fr))`,
+          gap: `${GAP}px`,
+        }}
+        onKeyDown={onKeyDown}
+      >
+        <For each={months()}>
+          {(start) => (
+            <MonthGrid
+              start={start}
+              multi={count() > 1}
+              cursor={cursor()}
+              marksByDate={marksByDate()}
+              inRange={inRange}
+              onPick={props.onPick}
+            />
+          )}
+        </For>
+      </div>
+    </>
+  );
+}
+
+function MonthGrid(props: {
+  start: DateStr;
+  multi: boolean;
+  cursor: DateStr;
+  marksByDate: Map<DateStr, TodoMark[]>;
+  inRange: (date: DateStr) => boolean;
+  onPick: (date: DateStr) => void;
+}) {
+  const month = props.start.slice(0, 7);
+  const days = createMemo(() => {
+    const first = gridStart(props.start);
+    return Array.from({ length: GRID_DAYS }, (_, i) => addDays(first, i));
+  });
+
+  return (
+    <section class="calendar-month" aria-label={monthFormat.format(parseDate(props.start))}>
+      <Show when={props.multi}>
+        <h3 class="calendar-caption">{monthFormat.format(parseDate(props.start))}</h3>
+      </Show>
       <div class="calendar-weekdays" aria-hidden="true">
         <For each={days().slice(0, 7)}>
           {(date) => <span>{weekdayFormat.format(parseDate(date))}</span>}
         </For>
       </div>
-      <div ref={grid} class="calendar-grid" onKeyDown={onKeyDown}>
+      <div class="calendar-grid">
         <For each={days()}>
           {(date) => {
-            const dayMarks = () => marksByDate().get(date) ?? [];
+            const dayMarks = () => props.marksByDate.get(date) ?? [];
             const count = () => dayMarks().length;
             return (
-              <button
-                type="button"
-                class="calendar-day"
-                classList={{
-                  'is-outside': date.slice(0, 7) !== month(),
-                  'is-today': date === today(),
-                  'is-visible': inRange(date),
-                }}
-                data-date={date}
-                tabIndex={date === cursor() ? 0 : -1}
-                aria-label={`${dateFormat.format(parseDate(date))}, ${count()} ${count() === 1 ? 'todo' : 'todos'}`}
-                aria-current={date === today() ? 'date' : undefined}
-                onClick={() => props.onPick(date)}
-              >
-                <span class="calendar-date">{Number(date.slice(8))}</span>
-                <span class="calendar-marks" aria-hidden="true">
-                  <For each={dayMarks().slice(0, MAX_MARKS)}>
-                    {(mark) => (
-                      <span
-                        class="calendar-mark"
-                        classList={{ 'is-done': mark.done }}
-                        style={{ width: `${markWidth(mark.length)}px` }}
-                      />
-                    )}
-                  </For>
-                  <Show when={count() > MAX_MARKS}>
-                    <span class="calendar-more">+{count() - MAX_MARKS}</span>
-                  </Show>
-                </span>
-              </button>
+              <Show when={!props.multi || date.startsWith(month)} fallback={<span />}>
+                <button
+                  type="button"
+                  class="calendar-day"
+                  classList={{
+                    'is-outside': !date.startsWith(month),
+                    'is-today': date === today(),
+                    'is-visible': props.inRange(date),
+                  }}
+                  data-date={date}
+                  tabIndex={date === props.cursor ? 0 : -1}
+                  aria-label={`${dateFormat.format(parseDate(date))}, ${count()} ${count() === 1 ? 'todo' : 'todos'}`}
+                  aria-current={date === today() ? 'date' : undefined}
+                  onClick={() => props.onPick(date)}
+                >
+                  <span class="calendar-date">{Number(date.slice(8))}</span>
+                  <span class="calendar-marks" aria-hidden="true">
+                    <For each={dayMarks().slice(0, MAX_MARKS)}>
+                      {(mark) => (
+                        <span
+                          class="calendar-mark"
+                          classList={{ 'is-done': mark.done }}
+                          style={{ width: `${markWidth(mark.length)}px` }}
+                        />
+                      )}
+                    </For>
+                    <Show when={count() > MAX_MARKS}>
+                      <span class="calendar-more">+{count() - MAX_MARKS}</span>
+                    </Show>
+                  </span>
+                </button>
+              </Show>
             );
           }}
         </For>
       </div>
-    </>
+    </section>
   );
 }

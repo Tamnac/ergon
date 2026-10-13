@@ -22,8 +22,10 @@ import {
 import { setRepeat } from '../state/actions';
 import { recurrences, weekStart } from '../state/data';
 import { today } from '../state/today';
+import { todoRow } from '../lib/todo-row';
 import { repeating, setRepeating } from '../state/view';
 import { Dialog } from './Dialog';
+import { ScopeField } from './ScopeField';
 
 const modes: [RepeatMode, string][] = [
   ['none', "Don't repeat"],
@@ -67,7 +69,12 @@ export function RepeatDialog() {
     { equals: (a, b) => a?.todo === b?.todo && a?.recurrence === b?.recurrence },
   );
   return (
-    <Dialog title="Repeat" open={repeating() !== null} onClose={() => setRepeating(null)}>
+    <Dialog
+      title="Repeat"
+      open={repeating() !== null}
+      anchor={() => todoRow(repeating())}
+      onClose={() => setRepeating(null)}
+    >
       <Show when={editing()} keyed>
         {({ todo, recurrence }) => (
           <RepeatEditor todo={todo} recurrence={recurrence} onDone={() => setRepeating(null)} />
@@ -262,29 +269,7 @@ function RepeatEditor(props: {
       </Show>
 
       <Show when={splittable && form.mode !== 'none'}>
-        <fieldset class="field">
-          <legend class="field-label">Change</legend>
-          <div class="segmented">
-            <label>
-              <input
-                type="radio"
-                name="repeat-scope"
-                checked={scope() === 'following'}
-                onChange={() => setScope('following')}
-              />
-              This and following
-            </label>
-            <label>
-              <input
-                type="radio"
-                name="repeat-scope"
-                checked={scope() === 'all'}
-                onChange={() => setScope('all')}
-              />
-              All
-            </label>
-          </div>
-        </fieldset>
+        <ScopeField scopes={['following', 'all']} value={scope()} onChange={setScope} />
       </Show>
 
       <Show when={error()}>

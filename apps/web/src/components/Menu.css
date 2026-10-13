@@ -7,7 +7,6 @@
   border: 0;
   background: var(--bg);
   color: var(--fg);
-  box-shadow: var(--ring-2);
   animation: var(--ring-in);
 }
 

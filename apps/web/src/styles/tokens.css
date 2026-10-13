@@ -40,8 +40,18 @@
   --ring-1: 0 0 0 1px var(--ring-c1);
   --ring-2: var(--ring-1), 0 0 0 5px var(--bg), 0 0 0 6px var(--ring-c2);
   --ring-3: var(--ring-2), 0 0 0 13px var(--bg), 0 0 0 14px var(--ring-c3);
+  /*
+   * Ring 2 for surfaces over content (see base.css): the gap between the rings is empty, with a
+   * translucent veil under the rings and a little beyond so they stay legible over text.
+   */
+  --ring-veil: color-mix(in srgb, var(--bg) 70%, transparent);
+  --ring-2-reach: 6px;
+  --ring-2-veiled:
+    0 0 0 1px var(--ring-c1), 0 0 0 var(--ring-2-reach) var(--ring-veil),
+    0 0 12px 8px var(--ring-veil);
   /* Rings expand out of the element when it appears, overshoot and settle. */
   --ring-in: ring-in 820ms cubic-bezier(0.14, 1.8, 0.3, 1);
+  --frame-in: frame-in 820ms cubic-bezier(0.14, 1.8, 0.3, 1);
 
   --row: 31px;
   --column-min: 136px;
@@ -51,6 +61,7 @@
 @media (prefers-reduced-motion: reduce) {
   :root {
     --ring-in: none;
+    --frame-in: none;
   }
 }
 
