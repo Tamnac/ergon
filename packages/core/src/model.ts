@@ -70,8 +70,6 @@ export interface Settings {
   /** 0 = Sunday … 6 = Saturday, null = locale default */
   weekStart: number | null;
   condensedWeekends: boolean;
-  /** Time of day (`HH:MM`) for reminders set without choosing one. */
-  reminderTime: string;
 }
 
 export interface Rows {
@@ -132,7 +130,6 @@ export const defaults: { [E in Entity]: Fields<E> } = {
     dayCount: 5,
     weekStart: null,
     condensedWeekends: false,
-    reminderTime: '09:00',
   },
 };
 

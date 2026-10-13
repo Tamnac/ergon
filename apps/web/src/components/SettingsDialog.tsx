@@ -1,4 +1,4 @@
-import { isTime, type DayCount, type InkDetail, type Theme } from '@ergon/core';
+import { type DayCount, type InkDetail, type Theme } from '@ergon/core';
 import { disable, enable, isEnabled } from '@tauri-apps/plugin-autostart';
 import { For, Show, createResource, createSignal } from 'solid-js';
 import { updateSettings } from '../state/actions';
@@ -73,16 +73,27 @@ export function SettingsDialog() {
               />
             )}
           </For>
-          <input
-            type="color"
-            class="color-input"
-            aria-label="Custom accent color"
-            value={settings.accent}
-            onInput={(e) =>
-              document.documentElement.style.setProperty('--accent', e.currentTarget.value)
-            }
-            onChange={(e) => void updateSettings({ accent: e.currentTarget.value })}
-          />
+          <label
+            class="color-custom"
+            title="Custom color"
+            aria-pressed={!accents.includes(settings.accent)}
+          >
+            <input
+              type="color"
+              aria-label="Custom accent color"
+              value={settings.accent}
+              onInput={(e) =>
+                document.documentElement.style.setProperty('--accent', e.currentTarget.value)
+              }
+              onChange={(e) => void updateSettings({ accent: e.currentTarget.value })}
+            />
+            <span
+              class="color-custom-swatch"
+              style={{
+                background: accents.includes(settings.accent) ? undefined : settings.accent,
+              }}
+            />
+          </label>
         </div>
       </fieldset>
 
@@ -174,20 +185,6 @@ function ReminderSettings() {
   return (
     <fieldset class="field">
       <legend class="field-label">Reminders</legend>
-      <label class="field-row">
-        Default time
-        <input
-          class="input"
-          type="time"
-          required
-          value={settings.reminderTime}
-          onChange={(e) => {
-            if (isTime(e.currentTarget.value)) {
-              void updateSettings({ reminderTime: e.currentTarget.value });
-            }
-          }}
-        />
-      </label>
       <label class="checkbox">
         <input
           type="checkbox"

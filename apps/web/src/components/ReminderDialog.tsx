@@ -1,7 +1,6 @@
-import { isTime, type Todo } from '@ergon/core';
+import { defaultReminderTime, isTime, type Todo } from '@ergon/core';
 import { Show, createSignal } from 'solid-js';
 import { setReminder, type Scope } from '../state/actions';
-import { settings } from '../state/data';
 import { todoRow } from '../lib/todo-row';
 import { reminding, setReminding } from '../state/view';
 import { Dialog } from './Dialog';
@@ -24,7 +23,7 @@ export function ReminderDialog() {
 
 function ReminderEditor(props: { todo: Todo; onDone: () => void }) {
   const { todo } = props;
-  const [time, setTime] = createSignal(todo.reminder ?? settings.reminderTime);
+  const [time, setTime] = createSignal(todo.reminder ?? defaultReminderTime(todo.date));
 
   const [scope, setScope] = createSignal<Scope>('this');
 

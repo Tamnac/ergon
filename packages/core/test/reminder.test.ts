@@ -1,11 +1,31 @@
 import { describe, expect, it } from 'vitest';
-import { Database, fireAt, INK_LABEL, isTime, patch, schedule, todoChanges } from '../src';
+import {
+  Database,
+  defaultReminderTime,
+  fireAt,
+  INK_LABEL,
+  isTime,
+  patch,
+  schedule,
+  todoChanges,
+} from '../src';
 import { memoryDriver } from './sqlite';
 
 describe('reminder times', () => {
   it('validates HH:MM', () => {
     expect(['00:00', '09:30', '23:59'].every(isTime)).toBe(true);
     expect(['24:00', '9:30', '09:60', '', null].some(isTime)).toBe(false);
+  });
+
+  it('suggests the next round hour for today and 09:00 otherwise', () => {
+    const now = new Date(2026, 8, 26, 14, 23);
+    expect(defaultReminderTime('2026-09-26', now)).toBe('15:00');
+    expect(defaultReminderTime('2026-09-27', now)).toBe('09:00');
+    expect(defaultReminderTime(null, now)).toBe('09:00');
+  });
+
+  it('suggests a time inside the day late at night', () => {
+    expect(defaultReminderTime('2026-09-26', new Date(2026, 8, 26, 23, 30))).toBe('23:59');
   });
 
   it('resolves to local time', () => {

@@ -1,4 +1,4 @@
-import type { DateStr } from './date';
+import { toDateStr, type DateStr } from './date';
 
 /** A todo (or occurrence) that reminds at `time` (`HH:MM`, local) on `date`. */
 export interface Reminder {
@@ -19,6 +19,16 @@ const TIME = /^([01]\d|2[0-3]):([0-5]\d)$/;
 
 export const isTime = (value: unknown): value is string =>
   typeof value === 'string' && TIME.test(value);
+
+/**
+ * Time suggested for a reminder without one: the next round hour when the todo is
+ * today, 09:00 on any other day. Never later than 23:59, so it stays on the day.
+ */
+export function defaultReminderTime(date: DateStr | null, now = new Date()): string {
+  if (date !== toDateStr(now)) return '09:00';
+  const hour = now.getHours();
+  return hour === 23 ? '23:59' : `${String(hour + 1).padStart(2, '0')}:00`;
+}
 
 /** When a reminder fires in the local time zone; a time skipped by DST shifts forward. */
 export function fireAt(date: DateStr, time: string): number {
