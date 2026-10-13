@@ -32,7 +32,7 @@ export function Header() {
         <IconButton icon="chevrons-right" label="Next week" onClick={() => shiftDays(7)} />
       </nav>
       <div class="header-end">
-        <button type="button" class="year" onClick={openHistory}>
+        <button type="button" class="year" onClick={(event) => openHistory(event.currentTarget)}>
           {years()}
         </button>
         <IconButton icon="calendar" label="Calendar" onClick={openCalendar} />

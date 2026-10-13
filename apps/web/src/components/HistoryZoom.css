@@ -25,7 +25,19 @@
 .history-track {
   --axis: 42%;
   position: absolute;
-  inset: 96px 0 20vh;
+  inset: 96px 0 8vh;
+}
+
+.history-body {
+  position: absolute;
+  inset: 0;
+  clip-path: inset(-200px 0 0);
+  transition: clip-path 11000ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Reveals the axis, ticks and events upward from the current year. */
+.history-track:not(.is-ready) .history-body {
+  clip-path: inset(100% 0 0);
 }
 
 .history-axis {
@@ -95,7 +107,18 @@
   box-shadow: 0 0 0 4px var(--accent-soft);
 }
 
+.history-now .history-dot,
+.history-here {
+  transition: opacity 700ms;
+}
+
+.history-track:not(.is-ready) .history-now .history-dot,
+.history-track:not(.is-ready) .history-here {
+  opacity: 0;
+}
+
 .history-year {
+  transform-origin: 0 0;
   font: 600 var(--text-2xl) / 1 var(--font-display);
   letter-spacing: 0.04em;
   color: var(--accent);
