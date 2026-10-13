@@ -8,6 +8,22 @@
   animation: var(--ring-in);
 }
 
+.dialog.is-closing {
+  animation:
+    var(--ring-out),
+    dialog-fade 140ms ease-in 80ms forwards;
+}
+
+.dialog.is-closing::backdrop {
+  animation: dialog-fade 220ms ease-in forwards;
+}
+
+@keyframes dialog-fade {
+  to {
+    opacity: 0;
+  }
+}
+
 .dialog::backdrop {
   background: color-mix(in srgb, var(--bg) 60%, transparent);
 }

@@ -61,10 +61,31 @@ export function Dialog(props: {
 }) {
   let dialog!: HTMLDialogElement;
   let leader!: HTMLDivElement;
+  let closing = false;
+
+  /** Closes after the rings collapse; anchored dialogs close at once. */
+  const close = () => {
+    if (closing) return;
+    if (dialog.classList.contains('is-anchored')) return dialog.close();
+    dialog.classList.add('is-closing');
+    const collapse = dialog
+      .getAnimations()
+      .find((a) => a instanceof CSSAnimation && a.animationName === 'ring-out');
+    if (!collapse) return dialog.close();
+    closing = true;
+    collapse.finished.then(
+      () => dialog.close(),
+      () => {},
+    );
+  };
 
   createEffect(() => {
-    if (props.open && !dialog.open) dialog.showModal();
-    else if (!props.open && dialog.open) dialog.close();
+    if (!props.open) {
+      if (dialog.open) close();
+    } else if (closing) {
+      closing = false;
+      dialog.classList.remove('is-closing');
+    } else if (!dialog.open) dialog.showModal();
   });
 
   createEffect(() => {
@@ -91,14 +112,22 @@ export function Dialog(props: {
         ref={dialog}
         class="dialog"
         aria-label={props.title}
-        onClose={() => props.onClose()}
+        onCancel={(event) => {
+          event.preventDefault();
+          close();
+        }}
+        onClose={() => {
+          closing = false;
+          dialog.classList.remove('is-closing');
+          props.onClose();
+        }}
         onClick={(event) => {
-          if (event.target === dialog) dialog.close();
+          if (event.target === dialog) close();
         }}
       >
         <header class="dialog-header">
           <h2 class="dialog-title">{props.title}</h2>
-          <IconButton icon="close" label="Close" onClick={() => dialog.close()} />
+          <IconButton icon="close" label="Close" onClick={close} />
         </header>
         <div class="dialog-body">{props.children}</div>
       </dialog>

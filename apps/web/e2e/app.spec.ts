@@ -81,6 +81,7 @@ test('changes the number of visible days', async ({ page }) => {
   const dialog = page.getByRole('dialog', { name: 'Settings' });
   await dialog.getByRole('radio', { name: '3' }).check();
   await dialog.getByRole('button', { name: 'Close' }).click();
+  await expect(dialog).toBeHidden();
   await expect(dayColumns(page)).toHaveCount(3);
   await page.keyboard.press('1');
   await expect(dayColumns(page)).toHaveCount(1);

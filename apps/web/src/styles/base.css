@@ -64,6 +64,12 @@ button:disabled {
   }
 }
 
+@keyframes ring-out {
+  to {
+    box-shadow: none;
+  }
+}
+
 @keyframes frame-in {
   from {
     inset: 0;

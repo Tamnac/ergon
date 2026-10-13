@@ -21,7 +21,7 @@ Concentric 1px outlines made from `box-shadow`, with a `--bg` gap between them. 
 
 - Gaps are 4px between ring 1 and 2, and 7px between ring 2 and 3.
 - A ring never sits inside the same level of ring: controls inside a dialog drop one level (`ring-3` dialog, `ring-1` focus) so a dialog stays at most three outlines deep.
-- Rings appear with `--ring-in` (expand outward with a small overshoot) and the shared `ring-in` keyframes in [base.css](../apps/web/src/styles/base.css).
+- Rings appear with `--ring-in` (expand outward with a small overshoot) and the shared `ring-in` keyframes in [base.css](../apps/web/src/styles/base.css). Centered dialogs collapse their rings with `--ring-out` (220ms, no overshoot) before closing, fading out with the backdrop over the last part; anchored dialogs and menus close at once.
 - Don't add borders to content to get emphasis; use a ring or `--accent`.
 
 ### Veiled rings
@@ -66,4 +66,4 @@ Theme (light, dark, system) and accent are applied in [App.tsx](../apps/web/src/
 ## Motion
 
 - Day navigation slides columns (FLIP), the calendar button zooms between the day grid and a month view, completions play a [completion effect](../apps/web/src/lib/effects.ts).
-- Rings use 820ms because of the overshoot. Respect `reducedMotion()` in JS and `prefers-reduced-motion` in CSS.
+- Rings use 820ms because of the overshoot; collapsing is quicker (220ms). Respect `reducedMotion()` in JS and `prefers-reduced-motion` in CSS.
