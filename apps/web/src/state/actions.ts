@@ -11,6 +11,7 @@ import {
   orderAt,
   parseRule,
   patch,
+  reminderChanges,
   splitRule,
   todoChanges,
   tryParseRule,
@@ -231,7 +232,7 @@ async function setContent(todo: Todo, content: Content, scope: Scope) {
 export function setReminder(todo: Todo, reminder: string | null, scope: Scope = 'this') {
   return serial(async () => {
     const series = scope === 'this' ? undefined : await seriesOf(todo);
-    if (!series) return commit(todoChanges(todo, { reminder }));
+    if (!series) return commit(reminderChanges(todo, reminder, today()));
     const { recurrence, at } = series;
     // Occurrences with a reminder of their own keep it.
     const unchanged = (t: Todo) => t.reminder === recurrence.reminder;

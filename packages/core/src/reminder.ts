@@ -21,8 +21,8 @@ export const isTime = (value: unknown): value is string =>
   typeof value === 'string' && TIME.test(value);
 
 /**
- * Time suggested for a reminder without one: the next round hour when the todo is
- * today, 09:00 on any other day. Never later than 23:59, so it stays on the day.
+ * Time suggested for a reminder without one: the next round hour when that day is today,
+ * 09:00 otherwise. Never later than 23:59, so it stays on the day.
  */
 export function defaultReminderTime(date: DateStr | null, now = new Date()): string {
   if (date !== toDateStr(now)) return '09:00';

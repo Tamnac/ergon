@@ -1,7 +1,8 @@
-import { defaultReminderTime, isTime, type Todo } from '@ergon/core';
+import { defaultReminderTime, effectiveDate, isTime, type Todo } from '@ergon/core';
 import { Show, createSignal } from 'solid-js';
 import { setReminder, type Scope } from '../state/actions';
 import { todoRow } from '../lib/todo-row';
+import { today } from '../state/today';
 import { reminding, setReminding } from '../state/view';
 import { Dialog } from './Dialog';
 import { ScopeField } from './ScopeField';
@@ -23,13 +24,17 @@ export function ReminderDialog() {
 
 function ReminderEditor(props: { todo: Todo; onDone: () => void }) {
   const { todo } = props;
-  const [time, setTime] = createSignal(todo.reminder ?? defaultReminderTime(todo.date));
+  const [time, setTime] = createSignal(
+    todo.reminder ?? defaultReminderTime(effectiveDate(todo, today())),
+  );
 
   const [scope, setScope] = createSignal<Scope>('this');
 
   const apply = (reminder: string | null) => {
     props.onDone();
-    if (reminder !== todo.reminder) void setReminder(todo, reminder, scope());
+    // Saving a rolled-over todo moves it to today, even when the time is unchanged.
+    const rolledOver = reminder !== null && effectiveDate(todo, today()) !== todo.date;
+    if (reminder !== todo.reminder || rolledOver) void setReminder(todo, reminder, scope());
   };
 
   const save = (event: SubmitEvent) => {

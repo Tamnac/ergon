@@ -247,7 +247,10 @@ function HandwritingSettings() {
           )}
         </For>
       </div>
-      <span class="sync-hint">Ergon simplifies your strokes to save data. Compact has a bit less detail but will make the app a bit leaner</span>
+      <span class="sync-hint">
+        Ergon simplifies your strokes to save data. Compact has a bit less detail but will make the
+        app a bit leaner
+      </span>
     </fieldset>
   );
 }

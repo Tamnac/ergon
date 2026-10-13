@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { completionChanges, effectiveDate, type Todo } from '../src';
+import { completionChanges, effectiveDate, reminderChanges, type Todo } from '../src';
 
 const today = '2026-09-26';
 
@@ -47,6 +47,21 @@ describe('rollover', () => {
     expect(completionChanges(todo('2026-09-28'), true, today)).toHaveLength(1);
     expect(completionChanges(todo('2026-09-20'), false, today)).toHaveLength(1);
     expect(completionChanges(todo(null), true, today)).toHaveLength(1);
+  });
+
+  it('moves rolled-over todos to today when a reminder is set', () => {
+    expect(reminderChanges(todo('2026-09-20'), '09:30', today)).toEqual([
+      { entity: 'todo', id: 't', field: 'reminder', value: '09:30' },
+      { entity: 'todo', id: 't', field: 'date', value: today },
+    ]);
+  });
+
+  it('keeps the date when a reminder is removed or the todo has not rolled over', () => {
+    expect(reminderChanges(todo('2026-09-20'), null, today)).toHaveLength(1);
+    expect(reminderChanges(todo('2026-09-28'), '09:30', today)).toHaveLength(1);
+    expect(reminderChanges(todo(null), '09:30', today)).toHaveLength(1);
+    const occurrence = todo('2026-09-20', { recurrenceId: 'r', occurrence: '2026-09-20' });
+    expect(reminderChanges(occurrence, '09:30', today)).toHaveLength(1);
   });
 
   it('stores a virtual occurrence when completing it', () => {

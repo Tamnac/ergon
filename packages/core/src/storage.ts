@@ -24,8 +24,9 @@ export interface Storage {
   /** Marks for todos (not headings) whose effective date is in `[from, to]`. */
   todoMarks(from: DateStr, to: DateStr, today: DateStr): Promise<TodoMark[]>;
   /**
-   * Reminders of undone todos (including virtual occurrences) dated in `[from, to]`. They
-   * are not rolled over: a missed reminder doesn't repeat the next day.
+   * Reminders of undone todos (including virtual occurrences) dated in `[from, to]`. They are
+   * not rolled over: a reminder fires on its own day, and setting one on a rolled-over todo
+   * moves that todo to today (`reminderChanges`).
    */
   reminders(from: DateStr, to: DateStr): Promise<Reminder[]>;
   listTodos(): Promise<Todo[]>;

@@ -17,3 +17,12 @@ export function completionChanges(todo: Todo, done: boolean, today: DateStr): Ch
   const moved = done && effectiveDate({ ...todo, done: false }, today) !== todo.date;
   return todoChanges(todo, moved ? { done, date: today } : { done });
 }
+
+/**
+ * Setting a reminder on a rolled-over todo moves it to today too, so the reminder fires once,
+ * on the day it is set, instead of following the todo onto every day it rolls onto.
+ */
+export function reminderChanges(todo: Todo, reminder: string | null, today: DateStr): Change[] {
+  const moved = reminder !== null && effectiveDate(todo, today) !== todo.date;
+  return todoChanges(todo, moved ? { reminder, date: today } : { reminder });
+}
