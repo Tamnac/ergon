@@ -58,6 +58,17 @@
   --sidebar: 48px;
 }
 
+/* Phones (same breakpoint as `isPhone`): one text step up and taller rows for touch. */
+@media (max-width: 479px) {
+  :root {
+    --text-xs: 0.75rem;
+    --text-sm: 0.875rem;
+    --text-md: 1rem;
+    --text-lg: 1.25rem;
+    --row: 38px;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   :root {
     --ring-in: none;

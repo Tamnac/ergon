@@ -10,7 +10,7 @@ import { TodoItem } from './TodoItem';
 import './Column.css';
 
 /**
- * A day or list: header, todos, and the empty space below them that opens the add input. Its
+ * A day or list: header, todos, and two ruled lines below them that open the add input. The
  * first line is also where a pen writes a new todo.
  */
 export function Column(props: {
@@ -43,23 +43,25 @@ export function Column(props: {
             />
           </li>
         </Show>
-        <li
-          class="todo-filler"
-          onPointerDown={(event) => (pressedWith = event.pointerType)}
-          onClick={() => {
-            if (pressedWith !== 'pen') openAdd();
-          }}
-        >
-          <InkSurface
-            onCommit={(strokes) => {
-              const ink = encodeInk(strokes, inkDetail());
-              if (ink && !isTap(strokes)) void addInkTodo(props.target, ink);
+        <li class="todo-filler">
+          <div
+            class="todo-lines"
+            onPointerDown={(event) => (pressedWith = event.pointerType)}
+            onClick={() => {
+              if (pressedWith !== 'pen') openAdd();
             }}
           >
-            <Show when={!adding()}>
-              <button type="button" class="todo-add-button" aria-label="Add todo" />
-            </Show>
-          </InkSurface>
+            <InkSurface
+              onCommit={(strokes) => {
+                const ink = encodeInk(strokes, inkDetail());
+                if (ink && !isTap(strokes)) void addInkTodo(props.target, ink);
+              }}
+            >
+              <Show when={!adding()}>
+                <button type="button" class="todo-add-button" aria-label="Add todo" />
+              </Show>
+            </InkSurface>
+          </div>
         </li>
       </ul>
     </section>

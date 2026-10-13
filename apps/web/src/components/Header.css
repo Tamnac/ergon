@@ -57,6 +57,10 @@
 }
 
 .app.is-phone .header {
-  padding: var(--space-1) var(--space-2);
+  padding: calc(var(--space-1) + env(safe-area-inset-top)) var(--space-2) var(--space-1);
   background: var(--bg-alt);
+}
+
+.app.is-phone .nav-today {
+  height: 36px;
 }

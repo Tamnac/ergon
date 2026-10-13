@@ -22,12 +22,12 @@ body {
   height: 100dvh;
 }
 
+/* Phones: date header on top, menu bar at the bottom; lists put their tabs up top instead. */
 .app.is-phone {
   grid-template:
-    'side' auto
-    'tabs' auto
-    'main' 1fr
     'top' auto
+    'main' 1fr
+    'side' auto
     / minmax(0, 1fr);
 }
 
@@ -109,6 +109,11 @@ button:disabled {
 
 .icon-button:disabled {
   opacity: 0.35;
+}
+
+.app.is-phone .icon-button {
+  width: 36px;
+  height: 36px;
 }
 
 .error {

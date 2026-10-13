@@ -55,6 +55,7 @@
 }
 
 .app.is-phone .tabs {
+  grid-area: top;
   padding-left: var(--space-2);
 }
 

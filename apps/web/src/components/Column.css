@@ -6,7 +6,7 @@
 }
 
 .app.is-phone .column {
-  --text-start: calc(2 * var(--space-2) + 14px);
+  --text-start: calc(2 * var(--space-2) + 18px);
 }
 
 .todo-list {
@@ -29,28 +29,33 @@
   line-height: 1.35;
 }
 
-/* Two ruled lines, the second shorter; the rest of the column is also an add target. */
+/* Fills the rest of the column; only the two ruled lines, the second shorter, open the add input. */
 .todo-filler {
   position: relative;
   flex: 1;
   min-height: calc(2 * var(--row) + var(--space-4));
+}
+
+.todo-lines {
+  position: relative;
+  height: calc(2 * var(--row));
   cursor: text;
 }
 
-.todo-filler::before,
-.todo-filler::after {
+.todo-lines::before,
+.todo-lines::after {
   content: '';
   position: absolute;
   left: var(--space-2);
   border-top: 1px solid var(--line);
 }
 
-.todo-filler::before {
+.todo-lines::before {
   top: var(--row);
   right: var(--space-2);
 }
 
-.todo-filler::after {
+.todo-lines::after {
   top: calc(2 * var(--row));
   width: 70%;
 }
@@ -185,7 +190,25 @@
 .app.is-phone .todo-check {
   position: static;
   flex: none;
+  width: 18px;
+  height: 18px;
   opacity: 1;
+}
+
+.app.is-phone .todo-check .icon {
+  width: 14px;
+  height: 14px;
+}
+
+.app.is-phone .todo-delete,
+.app.is-phone .todo-repeat {
+  width: 24px;
+  height: 24px;
+}
+
+.app.is-phone .todo-reminder {
+  min-width: 24px;
+  height: 24px;
 }
 
 .todo.is-heading {
