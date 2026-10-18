@@ -1,7 +1,8 @@
 import { addDays, schedule } from '@ergon/core';
 import { invoke } from '@tauri-apps/api/core';
 import { createEffect, createMemo, on, onCleanup } from 'solid-js';
-import { isDesktop } from '../lib/desktop';
+import { call } from '../db/native';
+import { isAndroid, isDesktop, isNative } from '../lib/desktop';
 import { persistedSignal } from '../lib/persisted';
 import { clearReminderKey, saveReminderKey } from '../lib/push-key';
 import { storage } from './storage';
@@ -9,7 +10,7 @@ import { sync, syncState } from './sync';
 import { today } from './today';
 
 const HORIZON_DAYS = 14;
-/** The desktop shell holds this many upcoming reminders, the server this many per account. */
+/** The native shell holds this many upcoming reminders, the server this many per account. */
 const NATIVE_LIMIT = 50;
 const SERVER_LIMIT = 100;
 /** The desktop shell still shows reminders that came due this long ago, e.g. while it was off. */
@@ -21,21 +22,26 @@ export const [remindersOn, setRemindersOn] = persistedSignal('ergon.reminders', 
 
 /** Whether this browser can receive pushed reminders. */
 export const pushSupported =
-  !isDesktop && 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+  !isNative && 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
 
 export const syncOn = () => syncState().state !== 'off';
 
 export async function enableReminders(): Promise<void> {
-  if (!isDesktop) await subscribe();
+  if (isAndroid) await call('allow_reminders');
+  else if (!isNative) await subscribe();
   setRemindersOn(true);
 }
 
 export async function disableReminders(): Promise<void> {
   setRemindersOn(false);
-  if (isDesktop) return;
+  if (isNative) return;
   await sync.deletePush().catch(() => {});
   await dropPush();
 }
+
+/** Android alarms can be late unless the user allows exact ones in the system settings. */
+export const exactAlarmsAllowed = () => call<boolean>('exact_alarms_allowed');
+export const openExactAlarmSettings = () => call('open_exact_alarm_settings');
 
 async function dropPush() {
   const registration = await navigator.serviceWorker.getRegistration();
@@ -76,7 +82,7 @@ async function restorePush() {
 }
 
 /**
- * Hands the upcoming reminders to the desktop shell, which shows them offline, and to the
+ * Hands the upcoming reminders to the native shell, which shows them offline, and to the
  * sync server, which pushes them to browsers. Every signed-in device uploads, so completing
  * a todo on one cancels its reminder on the others. Uploads wait for the sync to catch up, so
  * a stale local state never replaces the server's.
@@ -86,7 +92,7 @@ async function publish() {
   const reminders = await storage.reminders(addDays(day, -1), addDays(day, HORIZON_DAYS));
   const now = Date.now();
   const tasks: Promise<unknown>[] = [];
-  if (isDesktop) {
+  if (isNative) {
     const upcoming = remindersOn() ? schedule(reminders, now - GRACE, NATIVE_LIMIT) : [];
     tasks.push(invoke('set_reminders', { reminders: upcoming }));
   }
@@ -114,7 +120,7 @@ function update(): Promise<void> {
   return running;
 }
 
-/** Keeps the desktop shell and the server up to date with the reminders. Call within a component. */
+/** Keeps the native shell and the server up to date with the reminders. Call within a component. */
 export function installReminders() {
   let timer: ReturnType<typeof setTimeout> | undefined;
   const request = () => {

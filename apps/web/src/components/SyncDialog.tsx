@@ -3,7 +3,7 @@ import { For, Match, Show, Switch, createResource, createSignal, type JSX } from
 import { renderSVG } from 'uqr';
 import type { WorkerError } from '../db/client';
 import type { SyncState } from '../db/sync';
-import { isDesktop } from '../lib/desktop';
+import { isNative } from '../lib/desktop';
 import {
   linkUrl,
   pendingLink,
@@ -114,7 +114,7 @@ function RedeemLink(props: { server: string; onDone: () => void }) {
 
 function SignIn(props: { onCreated: (phrase: string) => void }) {
   const [mode, setMode] = createSignal<'create' | 'join'>('create');
-  const [server, setServer] = createSignal(isDesktop ? '' : location.origin);
+  const [server, setServer] = createSignal(isNative ? '' : location.origin);
   const [phrase, setPhrase] = createSignal('');
   const [invite, setInvite] = createSignal('');
   const [inviteNeeded, setInviteNeeded] = createSignal(false);
@@ -158,7 +158,7 @@ function SignIn(props: { onCreated: (phrase: string) => void }) {
           class="input"
           type="url"
           required
-          placeholder={isDesktop ? 'https://' : undefined}
+          placeholder={isNative ? 'https://' : undefined}
           aria-describedby="sync-server-hint"
           value={server()}
           onChange={(e) => setServer(e.currentTarget.value.trim())}

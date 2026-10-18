@@ -3,8 +3,14 @@ import { listen } from '@tauri-apps/api/event';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { persistedSignal } from './persisted';
 
-/** Whether the app runs in the Tauri desktop shell instead of a browser. */
-export const isDesktop = isTauri();
+/** Whether the app runs in the Tauri shell, with native storage, instead of a browser. */
+export const isNative = isTauri();
+
+/** Whether the shell is the Android app. */
+export const isAndroid = isNative && navigator.userAgent.includes('Android');
+
+/** Whether the shell is the desktop app, with a tray, shortcut and window. */
+export const isDesktop = isNative && !isAndroid;
 
 /** Hide the window instead of quitting when it is closed; the tray icon quits. */
 export const [closeToTray, setCloseToTray] = persistedSignal('ergon.closeToTray', false);

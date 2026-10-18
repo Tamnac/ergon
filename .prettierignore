@@ -2,3 +2,5 @@ pnpm-lock.yaml
 apps/server
 apps/desktop/src-tauri/target
 apps/desktop/src-tauri/gen
+apps/desktop/src-tauri/plugins/*/android/build
+apps/desktop/src-tauri/plugins/*/android/.tauri

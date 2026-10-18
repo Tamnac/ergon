@@ -13,7 +13,7 @@ import { Sidebar } from './components/Sidebar';
 import { SyncDialog } from './components/SyncDialog';
 import { readableOn } from './lib/color';
 import { setEffectLayer } from './lib/effects';
-import { installDesktop, isDesktop } from './lib/desktop';
+import { installDesktop, isDesktop, isNative } from './lib/desktop';
 import { addToToday, installShortcuts } from './lib/shortcuts';
 import { isPhone } from './lib/viewport';
 import { addGroup } from './state/actions';
@@ -66,7 +66,7 @@ export function App() {
         <Show when={storageError()}>
           <p class="error" role="alert">
             Local storage is unavailable, so changes can't be saved.{' '}
-            {isDesktop
+            {isNative
               ? String(storageError())
               : 'This browser may not support the Origin Private File System, or it is disabled in private mode.'}
           </p>

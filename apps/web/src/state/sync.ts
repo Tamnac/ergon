@@ -1,7 +1,7 @@
 import type { DeviceLink } from '@ergon/core';
 import { createSignal } from 'solid-js';
 import type { SyncState } from '../db/sync';
-import { isDesktop } from '../lib/desktop';
+import { isNative } from '../lib/desktop';
 import { worker } from './storage';
 
 export const sync = worker.sync;
@@ -22,7 +22,7 @@ export const [pendingLink, setPendingLink] = createSignal(takeLink());
 
 export function linkUrl(link: LinkParams): string {
   const params = new URLSearchParams({ link: `${link.id}.${link.key}`, server: link.server });
-  const app = isDesktop ? `${link.server}/` : `${location.origin}${location.pathname}`;
+  const app = isNative ? `${link.server}/` : `${location.origin}${location.pathname}`;
   return `${app}#${params}`;
 }
 

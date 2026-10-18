@@ -1,10 +1,12 @@
 import { type DayCount, type InkDetail, type Theme } from '@ergon/core';
 import { disable, enable, isEnabled } from '@tauri-apps/plugin-autostart';
-import { For, Show, createResource, createSignal } from 'solid-js';
+import { For, Show, createResource, createSignal, onCleanup, onMount } from 'solid-js';
 import { updateSettings } from '../state/actions';
 import {
   closeToTray,
+  isAndroid,
   isDesktop,
+  isNative,
   quickAddAvailable,
   quickAddShortcut,
   setCloseToTray,
@@ -21,6 +23,8 @@ import { settings } from '../state/data';
 import {
   disableReminders,
   enableReminders,
+  exactAlarmsAllowed,
+  openExactAlarmSettings,
   pushSupported,
   remindersOn,
   syncOn,
@@ -171,7 +175,7 @@ export function SettingsDialog() {
 
 function ReminderSettings() {
   const [error, setError] = createSignal<string>();
-  const available = () => isDesktop || (pushSupported && syncOn());
+  const available = () => isNative || (pushSupported && syncOn());
 
   const toggle = async (on: boolean) => {
     setError();
@@ -194,12 +198,15 @@ function ReminderSettings() {
         />
         Remind me on this device
       </label>
-      <Show when={!isDesktop && !available()}>
+      <Show when={!isNative && !available()}>
         <span class="sync-hint">
           {pushSupported
             ? 'Sign in to sync to get reminders in the browser.'
             : "This browser can't show reminders when Ergon is closed."}
         </span>
+      </Show>
+      <Show when={isAndroid && remindersOn()}>
+        <ExactAlarmHint />
       </Show>
       <Show when={error()}>
         {(message) => (
@@ -209,6 +216,28 @@ function ReminderSettings() {
         )}
       </Show>
     </fieldset>
+  );
+}
+
+function ExactAlarmHint() {
+  const [allowed, { refetch }] = createResource(exactAlarmsAllowed);
+  const recheck = () => {
+    if (document.visibilityState === 'visible') void refetch();
+  };
+  onMount(() => {
+    document.addEventListener('visibilitychange', recheck);
+    onCleanup(() => document.removeEventListener('visibilitychange', recheck));
+  });
+
+  return (
+    <Show when={allowed() === false}>
+      <span class="sync-hint">
+        Android may show reminders minutes late unless Ergon can set exact alarms.
+      </span>
+      <button type="button" class="button" onClick={() => void openExactAlarmSettings()}>
+        Allow exact alarms
+      </button>
+    </Show>
   );
 }
 

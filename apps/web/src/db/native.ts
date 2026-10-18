@@ -1,11 +1,15 @@
 import { invoke } from '@tauri-apps/api/core';
 import { Database, type ChangeListener, type SecretStore, type SqlDriver } from '@ergon/core';
+import { isAndroid } from '../lib/desktop';
 import type { DatabaseClient } from './client';
 import { storageMethods, syncMethods } from './protocol';
 import { createSync, type SyncState } from './sync';
 
 /** Rust commands reject with a plain string. */
-async function call<T = void>(command: string, args: Record<string, unknown>): Promise<T> {
+export async function call<T = void>(
+  command: string,
+  args: Record<string, unknown> = {},
+): Promise<T> {
   try {
     return await invoke<T>(command, args);
   } catch (error) {
@@ -13,13 +17,13 @@ async function call<T = void>(command: string, args: Record<string, unknown>): P
   }
 }
 
-/** SQLite in the desktop app's Rust process. */
+/** SQLite in the native app's Rust process. */
 const driver: SqlDriver = {
   exec: (sql) => call('sql_exec', { sql }),
   query: (sql, params = []) => call('sql_query', { sql, params }),
 };
 
-/** The OS keychain. */
+/** The OS keychain, or the Android Keystore. */
 const secrets: SecretStore = {
   get: async (key) => (await call<string | null>('secret_get', { key })) ?? undefined,
   set: (key, value) => call('secret_set', { key, value: value ?? null }),
@@ -31,14 +35,14 @@ async function openDatabase(): Promise<Database> {
   return Database.open(driver, Date.now, secrets);
 }
 
-/** The database and sync engine on the main thread, for the desktop app. */
+/** The database and sync engine on the main thread, for the desktop and Android apps. */
 export function createNativeClient(): DatabaseClient {
   const listeners = new Set<ChangeListener>();
   const syncListeners = new Set<(state: SyncState) => void>();
 
   const ready = openDatabase().then((db) => {
     const sync = createSync(db, (state) => syncListeners.forEach((listener) => listener(state)), {
-      app: 'Ergon Desktop',
+      app: isAndroid ? 'Ergon Android' : 'Ergon Desktop',
     });
     db.subscribe((changed) => {
       listeners.forEach((listener) => listener(changed));

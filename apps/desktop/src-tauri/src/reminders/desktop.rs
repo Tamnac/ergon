@@ -1,25 +1,24 @@
-//! Notifications for upcoming reminders. The page hands over the next few with
-//! `set_reminders`; they fire from here, so they work offline and while the window is hidden.
+//! A thread that shows each reminder as a notification when it comes due, for as long as the
+//! app runs, even with its window hidden.
 
 use std::collections::HashSet;
 use std::sync::{Arc, Condvar, Mutex, MutexGuard};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-use serde::Deserialize;
-use tauri::{AppHandle, Manager, State};
+use tauri::{AppHandle, Manager};
 use tauri_plugin_notification::NotificationExt;
+
+use super::Reminder;
 
 /// Reminders that came due longer ago than this are dropped instead of shown late.
 const GRACE_MS: u64 = 60 * 60 * 1000;
 /// Longest sleep, so the wall clock is checked again after the computer was suspended.
 const MAX_WAIT: Duration = Duration::from_secs(30);
 
-/// A reminder due at `at`, in Unix milliseconds.
-#[derive(Clone, Debug, Deserialize, PartialEq)]
-pub struct Reminder {
-    pub id: String,
-    pub at: u64,
-    pub text: String,
+fn now_ms() -> u64 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map_or(0, |elapsed| elapsed.as_millis() as u64)
 }
 
 #[derive(Default)]
@@ -60,12 +59,6 @@ fn key(reminder: &Reminder) -> (String, u64) {
     (reminder.id.clone(), reminder.at)
 }
 
-fn now_ms() -> u64 {
-    SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map_or(0, |elapsed| elapsed.as_millis() as u64)
-}
-
 #[derive(Default)]
 pub struct Scheduler {
     schedule: Mutex<Schedule>,
@@ -79,7 +72,7 @@ impl Scheduler {
             .unwrap_or_else(|poisoned| poisoned.into_inner())
     }
 
-    fn set(&self, reminders: Vec<Reminder>) {
+    pub fn set(&self, reminders: Vec<Reminder>) {
         self.lock().replace(reminders);
         self.changed.notify_all();
     }
@@ -105,11 +98,6 @@ impl Scheduler {
             }
         }
     }
-}
-
-#[tauri::command]
-pub fn set_reminders(scheduler: State<'_, Arc<Scheduler>>, reminders: Vec<Reminder>) {
-    scheduler.set(reminders);
 }
 
 fn show(app: &AppHandle, reminder: &Reminder) {
