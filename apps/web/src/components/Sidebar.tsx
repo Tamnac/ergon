@@ -2,7 +2,13 @@ import { For, Show } from 'solid-js';
 import { isPhone } from '../lib/viewport';
 import { canUndo, undo } from '../state/actions';
 import { setSyncOpen, syncState } from '../state/sync';
-import { mobileView, setHelpOpen, setMobileView, setSettingsOpen } from '../state/view';
+import {
+  mobileView,
+  setHelpOpen,
+  setMobileView,
+  setSearchOpen,
+  setSettingsOpen,
+} from '../state/view';
 import { IconButton } from './Icon';
 import { statusText } from './SyncDialog';
 import './Sidebar.css';
@@ -16,6 +22,7 @@ const views = [
 export function Sidebar() {
   const actions = (
     <div class="sidebar-actions">
+      <IconButton icon="search" label="Search" onClick={() => setSearchOpen(true)} />
       <IconButton icon="undo" label="Undo" disabled={!canUndo()} onClick={() => void undo()} />
       <IconButton
         icon="cloud"
@@ -24,7 +31,9 @@ export function Sidebar() {
         onClick={() => setSyncOpen(true)}
       />
       <IconButton icon="sliders" label="Settings" onClick={() => setSettingsOpen(true)} />
-      <IconButton icon="help" label="Keyboard shortcuts" onClick={() => setHelpOpen(true)} />
+      <Show when={!isPhone()}>
+        <IconButton icon="help" label="Keyboard shortcuts" onClick={() => setHelpOpen(true)} />
+      </Show>
     </div>
   );
 

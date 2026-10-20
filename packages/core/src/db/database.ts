@@ -4,6 +4,7 @@ import { wins } from '../merge';
 import { INK_LABEL } from '../ink';
 import { compareOrder, type Ordered } from '../order';
 import { occurrenceId, virtualOccurrences } from '../recurrence';
+import { searchWords } from '../search';
 import { isTime, type Reminder } from '../reminder';
 import {
   SETTINGS_ID,
@@ -215,6 +216,19 @@ export class Database implements Storage {
         }))
         .toSorted((a, b) => (a.date + a.time < b.date + b.time ? -1 : 1));
     });
+  }
+
+  search(query: string, today: DateStr, limit: number): Promise<Todo[]> {
+    const words = searchWords(query);
+    if (words.length === 0) return Promise.resolve([]);
+    const matches = words.map(() => "text LIKE ? ESCAPE '\\'").join(' AND ');
+    return this.#select(
+      'todo',
+      `SELECT * FROM todo WHERE deleted = 0 AND skipped = 0 AND ink IS NULL AND ${matches}
+       AND (date IS NOT NULL OR "listId" IN (SELECT id FROM list WHERE deleted = 0))
+       ORDER BY date IS NULL, abs(julianday(date) - julianday(?)), "order", id LIMIT ?`,
+      [...words.map((word) => `%${word.replace(/[\\%_]/g, '\\$&')}%`), today, limit],
+    );
   }
 
   listTodos(): Promise<Todo[]> {

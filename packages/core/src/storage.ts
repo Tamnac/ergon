@@ -29,6 +29,11 @@ export interface Storage {
    * moves that todo to today (`reminderChanges`).
    */
   reminders(from: DateStr, to: DateStr): Promise<Reminder[]>;
+  /**
+   * Stored todos (not virtual occurrences, not ink) whose text contains every word of `query`,
+   * case-insensitive for ASCII. Day todos nearest to `today` come first, then list todos.
+   */
+  search(query: string, today: DateStr, limit: number): Promise<Todo[]>;
   listTodos(): Promise<Todo[]>;
   recurrences(): Promise<Recurrence[]>;
   /** Stored occurrences of a recurrence, including skipped ones. */

@@ -7,6 +7,7 @@ export * from './order';
 export * from './recurrence';
 export * from './reminder';
 export * from './rollover';
+export * from './search';
 export * from './storage';
 export * from './sync/account';
 export * from './sync/api';

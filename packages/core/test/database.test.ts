@@ -76,6 +76,30 @@ describe('Database', () => {
     expect(await db.todoMarks('2026-09-27', '2026-09-30', today)).toEqual([future]);
   });
 
+  it('searches stored todos by every word', async () => {
+    const db = await openDb();
+    await db.write([
+      ...todo('far', '2026-12-01', { text: 'Buy oat milk' }),
+      ...todo('near', '2026-09-27', { text: 'MILK the cow, buy a pail' }),
+      ...todo('past', '2026-09-20', { text: 'Buy milk', done: true }),
+      ...todo('other', today, { text: 'Call mom' }),
+      ...todo('gone', today, { text: 'Buy milk', deleted: true }),
+      ...todo('ink', today, { text: '', ink: 'AQ' }),
+      ...todo('percent', today, { text: '100% sure' }),
+      ...patch('list', 'l', { name: 'L', groupId: 'g' }),
+      ...patch('todo', 'listed', { text: 'Buy milk later', listId: 'l', order: 'a0' }),
+      ...patch('list', 'dead', { name: 'D', groupId: 'g', deleted: true }),
+      ...patch('todo', 'orphan', { text: 'Buy milk too', listId: 'dead', order: 'a0' }),
+    ]);
+    const ids = async (query: string) => (await db.search(query, today, 10)).map((t) => t.id);
+    expect(await ids('buy milk')).toEqual(['near', 'past', 'far', 'listed']);
+    expect(await ids('  MILK  ')).toEqual(['near', 'past', 'far', 'listed']);
+    expect(await ids('')).toEqual([]);
+    expect(await ids('100%')).toEqual(['percent']);
+    expect(await ids('_')).toEqual([]);
+    expect(await db.search('milk', today, 2)).toHaveLength(2);
+  });
+
   it('hides tombstoned rows', async () => {
     const db = await openDb();
     await db.write(todo('a', today));

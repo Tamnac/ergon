@@ -6,6 +6,7 @@ import {
   jumpTo,
   setAddingKey,
   setHelpOpen,
+  setSearchOpen,
   shiftDays,
   targetKey,
   visibleDays,
@@ -17,6 +18,7 @@ export const shortcuts: [keys: string, action: string][] = [
   ['T', 'Jump to today'],
   ['N', 'Add a todo to today'],
   ['1 / 3 / 5 / 7', 'Number of visible days'],
+  ['/ or Ctrl + K', 'Search'],
   ['Ctrl + Z', 'Undo'],
   ['↑ / ↓', 'Focus previous / next todo'],
   ['Enter', 'Edit focused todo'],
@@ -54,6 +56,11 @@ export function installShortcuts(): () => void {
       return;
     }
     if (dialogOpen) return;
+    if (mod && event.key.toLowerCase() === 'k') {
+      event.preventDefault();
+      setSearchOpen(true);
+      return;
+    }
     if (mod && !event.shiftKey && event.key.toLowerCase() === 'z') {
       event.preventDefault();
       void undo();
@@ -79,6 +86,9 @@ export function installShortcuts(): () => void {
       case '5':
       case '7':
         void updateSettings({ dayCount: Number(event.key) as DayCount });
+        break;
+      case '/':
+        setSearchOpen(true);
         break;
       case '?':
         setHelpOpen(true);

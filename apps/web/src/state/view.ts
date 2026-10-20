@@ -30,6 +30,7 @@ export const [focusRequest, setFocusRequest] = createSignal<{ id: string; key: s
 );
 export const [settingsOpen, setSettingsOpen] = createSignal(false);
 export const [helpOpen, setHelpOpen] = createSignal(false);
+export const [searchOpen, setSearchOpen] = createSignal(false);
 /** Todo whose repetition is being edited. */
 export const [repeating, setRepeating] = createSignal<Todo | null>(null);
 /** Todo whose reminder is being edited. */

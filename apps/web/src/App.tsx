@@ -8,6 +8,7 @@ import { ListsPanel, TabBar } from './components/ListsPanel';
 import { ReminderDialog } from './components/ReminderDialog';
 import { RepeatDialog } from './components/RepeatDialog';
 import { ScopeDialog } from './components/ScopeDialog';
+import { SearchDialog } from './components/SearchDialog';
 import { SettingsDialog } from './components/SettingsDialog';
 import { Sidebar } from './components/Sidebar';
 import { SyncDialog } from './components/SyncDialog';
@@ -89,6 +90,7 @@ export function App() {
       <SettingsDialog />
       <SyncDialog />
       <HelpDialog />
+      <SearchDialog />
       <RepeatDialog />
       <ReminderDialog />
       <ScopeDialog />
