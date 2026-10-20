@@ -11,9 +11,11 @@ import { ScopeDialog } from './components/ScopeDialog';
 import { SettingsDialog } from './components/SettingsDialog';
 import { Sidebar } from './components/Sidebar';
 import { SyncDialog } from './components/SyncDialog';
+import { UpdatePrompt } from './components/UpdatePrompt';
 import { readableOn } from './lib/color';
 import { setEffectLayer } from './lib/effects';
 import { installDesktop, isDesktop, isNative } from './lib/desktop';
+import { installServiceWorker } from './lib/pwa';
 import { addToToday, installShortcuts } from './lib/shortcuts';
 import { isPhone } from './lib/viewport';
 import { addGroup } from './state/actions';
@@ -50,6 +52,7 @@ export function App() {
     if (isDesktop) onCleanup(installDesktop(addToToday));
   });
   installReminders();
+  onMount(installServiceWorker);
   onMount(() => {
     if (pendingLink()) setSyncOpen(true);
   });
@@ -91,6 +94,7 @@ export function App() {
       <ScopeDialog />
       <Calendar />
       <HistoryZoom />
+      <UpdatePrompt />
     </div>
   );
 }
