@@ -56,6 +56,21 @@ test('opens the todo menu with the context menu key', async ({ page }) => {
   await expect(todo(day(page), 'Water plants')).toHaveClass(/is-done/);
 });
 
+test('reorders with Alt and the arrow keys', async ({ page }) => {
+  await addTodos(day(page), 'First', 'Second', 'Third');
+  await todo(day(page), 'Third').focus();
+  await page.keyboard.press('Alt+ArrowUp');
+  await expect(day(page).locator('.todo-label')).toHaveText(['First', 'Third', 'Second']);
+  await expect(todo(day(page), 'Third')).toBeFocused();
+  await page.keyboard.press('Alt+ArrowUp');
+  await page.keyboard.press('Alt+ArrowUp');
+  await expect(day(page).locator('.todo-label')).toHaveText(['Third', 'First', 'Second']);
+  await page.keyboard.press('Alt+ArrowDown');
+  await expect(day(page).locator('.todo-label')).toHaveText(['First', 'Third', 'Second']);
+  await page.reload();
+  await expect(day(page).locator('.todo-label')).toHaveText(['First', 'Third', 'Second']);
+});
+
 test('creates headings and renders links', async ({ page }) => {
   await addTodos(day(page), '# Afternoon', 'Read https://example.com/post');
   await expect(todo(day(page), 'Afternoon')).toHaveClass(/is-heading/);

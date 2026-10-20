@@ -17,6 +17,10 @@
           if (appearance.theme !== 'system') root.dataset.theme = appearance.theme;
           root.style.setProperty('--accent', appearance.accent);
           root.style.setProperty('--accent-fg', appearance.accentFg);
+          if (appearance.accentTextLight) {
+            root.style.setProperty('--accent-text-light', appearance.accentTextLight);
+            root.style.setProperty('--accent-text-dark', appearance.accentTextDark);
+          }
         }
       } catch {}
     </script>

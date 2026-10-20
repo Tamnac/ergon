@@ -13,7 +13,7 @@ import { SettingsDialog } from './components/SettingsDialog';
 import { Sidebar } from './components/Sidebar';
 import { SyncDialog } from './components/SyncDialog';
 import { UpdatePrompt } from './components/UpdatePrompt';
-import { readableOn } from './lib/color';
+import { applyAccent } from './lib/accent';
 import { setEffectLayer } from './lib/effects';
 import { installDesktop, isDesktop, isNative } from './lib/desktop';
 import { installServiceWorker } from './lib/pwa';
@@ -33,14 +33,12 @@ export function App() {
   createEffect(() => {
     if (!settingsReady()) return;
     const root = document.documentElement;
-    const accentFg = readableOn(settings.accent);
     if (settings.theme === 'system') delete root.dataset.theme;
     else root.dataset.theme = settings.theme;
-    root.style.setProperty('--accent', settings.accent);
-    root.style.setProperty('--accent-fg', accentFg);
+    const derived = applyAccent(settings.accent);
     localStorage.setItem(
       'ergon.appearance',
-      JSON.stringify({ theme: settings.theme, accent: settings.accent, accentFg }),
+      JSON.stringify({ theme: settings.theme, accent: settings.accent, ...derived }),
     );
   });
 

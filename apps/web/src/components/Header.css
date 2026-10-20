@@ -36,7 +36,7 @@
 }
 
 .nav-today:hover {
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 .header-end {
@@ -53,7 +53,7 @@
 }
 
 .year:hover {
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 .app.is-phone .header {

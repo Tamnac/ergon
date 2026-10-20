@@ -121,7 +121,7 @@
   transform-origin: 0 0;
   font: 600 var(--text-2xl) / 1 var(--font-display);
   letter-spacing: 0.04em;
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 .history-here {

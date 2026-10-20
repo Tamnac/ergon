@@ -69,7 +69,7 @@ export function TabBar() {
   const [addingGroup, setAddingGroup] = createSignal(false);
 
   return (
-    <div class="tabs">
+    <nav class="tabs" aria-label="List tabs">
       <div class="tab-list" role="tablist" aria-label="Tabs">
         <For each={groups}>
           {(group) => (
@@ -143,7 +143,7 @@ export function TabBar() {
           />
         </Show>
       </div>
-    </div>
+    </nav>
   );
 }
 

@@ -126,7 +126,7 @@
 }
 
 .calendar-day.is-today .calendar-date {
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 .calendar-marks {

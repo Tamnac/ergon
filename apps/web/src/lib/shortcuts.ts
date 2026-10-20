@@ -24,6 +24,7 @@ export const shortcuts: [keys: string, action: string][] = [
   ['Enter', 'Edit focused todo'],
   ['Space / right click', 'Complete a todo'],
   ['Menu key', 'Open the menu of the focused todo'],
+  ['Alt + ↑ / ↓', 'Move focused todo up / down'],
   ['> / <', 'Move focused todo to next / previous day'],
   ['Delete', 'Delete focused todo'],
   ['R', 'Repeat focused todo'],

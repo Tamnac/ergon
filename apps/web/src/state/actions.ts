@@ -333,6 +333,22 @@ export function moveByDays(todo: Todo, days: number) {
   });
 }
 
+/**
+ * Moves a todo up (negative) or down within its day or list, the keyboard way to reorder.
+ * Resolves with whether it moved.
+ */
+export function moveBy(todo: Todo, offset: number) {
+  return serial(async () => {
+    const target = placeOf(todo);
+    const siblings = await todosIn(target);
+    const index = siblings.findIndex((t) => t.id === todo.id);
+    const next = index + offset;
+    if (index < 0 || next < 0 || next >= siblings.length) return false;
+    await place(todo, target, next);
+    return true;
+  });
+}
+
 function appendOrder(siblings: readonly Ordered[]) {
   return orderAt(siblings, siblings.length);
 }

@@ -61,7 +61,7 @@
 }
 
 .day-header.is-today .cap {
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 .day-header.is-past {

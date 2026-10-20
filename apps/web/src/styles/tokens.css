@@ -4,11 +4,16 @@
   --accent: #6d28d9;
   --accent-fg: #ffffff;
   --accent-soft: color-mix(in srgb, var(--accent) 14%, transparent);
+  /* The accent as text: set per accent color (see accent.ts) so it reads on either theme. */
+  --accent-text: light-dark(
+    var(--accent-text-light, var(--accent)),
+    var(--accent-text-dark, var(--accent))
+  );
 
   --bg: light-dark(#ffffff, #111112);
   --bg-alt: light-dark(#f4f4f5, #19191b);
   --fg: light-dark(#121212, #ededed);
-  --fg-muted: light-dark(#85858c, #8a8a92);
+  --fg-muted: light-dark(#6b6b73, #8a8a92);
   --line: light-dark(#e7e7ea, #29292d);
   --line-strong: light-dark(#121212, #ededed);
   --hover: light-dark(#f6f6f7, #1c1c1f);

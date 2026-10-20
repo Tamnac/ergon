@@ -1,5 +1,5 @@
 import { completionOccasion, decodeInk, encodeInk, type Stroke, type Todo } from '@ergon/core';
-import { For, Show, createEffect, onMount } from 'solid-js';
+import { For, Show, createEffect, on, onMount } from 'solid-js';
 import { makeDraggable } from '../lib/dnd';
 import { cancelCompletion, isCompleting, playCompletion } from '../lib/effects';
 import { inkDetail } from '../lib/ink';
@@ -9,6 +9,7 @@ import {
   deleteTodo,
   editInk,
   editTodo,
+  moveBy,
   moveByDays,
   moveTodo,
   parseEntry,
@@ -59,6 +60,21 @@ export function TodoItem(props: { todo: Todo; siblings: readonly Todo[]; columnK
     setFocusRequest(null);
     item.focus();
   });
+
+  // Reordering moves the row in the DOM, which drops its focus.
+  let keepFocus = false;
+  const position = () => props.siblings.findIndex((todo) => todo.id === props.todo.id);
+  createEffect(
+    on(
+      position,
+      () => {
+        if (!keepFocus) return;
+        keepFocus = false;
+        item.focus();
+      },
+      { defer: true },
+    ),
+  );
 
   const focusSelf = () => setFocusRequest({ id: props.todo.id, key: props.columnKey });
 
@@ -136,7 +152,16 @@ export function TodoItem(props: { todo: Todo; siblings: readonly Todo[]; columnK
   };
 
   const onKeyDown = (event: KeyboardEvent) => {
-    if (event.target !== item || event.ctrlKey || event.metaKey || event.altKey) return;
+    if (event.target !== item || event.ctrlKey || event.metaKey) return;
+    if (event.altKey) {
+      if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') return;
+      event.preventDefault();
+      keepFocus = true;
+      void moveBy(props.todo, event.key === 'ArrowUp' ? -1 : 1).then((moved) => {
+        if (!moved) keepFocus = false;
+      });
+      return;
+    }
     const navigating = event.key === 'ArrowUp' || event.key === 'ArrowDown';
     if (event.repeat && !navigating) return;
     switch (event.key) {
@@ -246,7 +271,7 @@ export function TodoItem(props: { todo: Todo; siblings: readonly Todo[]; columnK
                   type="button"
                   class="todo-reminder icon-button"
                   tabIndex={-1}
-                  aria-label="Reminder"
+                  aria-label={`Reminder at ${formatTime(time())}`}
                   title={`Reminds at ${formatTime(time())}`}
                   onClick={() => setReminding(props.todo)}
                 >

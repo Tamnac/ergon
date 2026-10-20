@@ -11,6 +11,7 @@ import {
   quickAddShortcut,
   setCloseToTray,
 } from '../lib/desktop';
+import { applyAccent } from '../lib/accent';
 import { effectChoices } from '../lib/effects';
 import { RANDOM, type EffectFrequency, type EffectIntensity } from '../lib/effect-policy';
 import {
@@ -104,16 +105,14 @@ export function SettingsDialog() {
           </For>
           <label
             class="color-custom"
+            classList={{ 'is-selected': !accents.includes(settings.accent) }}
             title="Custom color"
-            aria-pressed={!accents.includes(settings.accent)}
           >
             <input
               type="color"
               aria-label="Custom accent color"
               value={settings.accent}
-              onInput={(e) =>
-                document.documentElement.style.setProperty('--accent', e.currentTarget.value)
-              }
+              onInput={(e) => applyAccent(e.currentTarget.value)}
               onChange={(e) => void updateSettings({ accent: e.currentTarget.value })}
             />
             <span

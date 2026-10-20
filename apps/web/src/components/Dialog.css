@@ -190,7 +190,7 @@ legend.field-label {
   pointer-events: none;
 }
 
-.color-custom[aria-pressed='true'] {
+.color-custom.is-selected {
   box-shadow:
     0 0 0 2px var(--bg),
     0 0 0 3px var(--fg);
