@@ -10,6 +10,15 @@ export function compareOrder(a: Ordered, b: Ordered): number {
   return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
 }
 
+/** `count` order keys that sort after all of `siblings`, in ascending order. */
+export function ordersAfter(siblings: readonly Ordered[], count: number): string[] {
+  const last = siblings.reduce<string | null>(
+    (max, { order }) => (max === null || order > max ? order : max),
+    null,
+  );
+  return generateNKeysBetween(last, null, count);
+}
+
 /**
  * Order key for inserting at `index` into sorted `siblings`.
  * If neighbours share a key (e.g. after concurrent inserts or rollover), all siblings

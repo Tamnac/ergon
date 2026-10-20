@@ -9,6 +9,7 @@ import {
   newId,
   occurrences,
   orderAt,
+  ordersAfter,
   parseRule,
   patch,
   reminderChanges,
@@ -18,6 +19,8 @@ import {
   type Change,
   type DateStr,
   type Fields,
+  type Imported,
+  type ImportedTodo,
   type List,
   type ListGroup,
   type Ordered,
@@ -372,6 +375,57 @@ export function moveListToGroup(list: List, groupId: string) {
   return serial(async () => {
     const { order, rekeyed } = appendOrder(await listsIn(groupId));
     await commit([...patch('list', list.id, { groupId, order }), ...reorder('list', rekeyed)]);
+  });
+}
+
+/**
+ * Adds imported todos after the ones already on their days, and each imported tab as a new
+ * tab after the existing ones. One undo step.
+ */
+export function importTodos(imported: Imported) {
+  return serial(async () => {
+    const changes: Change[] = [];
+    const addTodos = (todos: readonly ImportedTodo[], orders: string[], where: Target) => {
+      todos.forEach(({ text, done }, i) => {
+        const content = parseEntry(text);
+        changes.push(
+          ...patch('todo', newId(), {
+            ...content,
+            ...locationOf(where),
+            order: orders[i],
+            done: done && content.kind === 'todo',
+          }),
+        );
+      });
+    };
+
+    const existing = Map.groupBy(await storage.allTodos(), (todo) => todo.date);
+    for (const [date, todos] of Map.groupBy(imported.days, (todo) => todo.date)) {
+      addTodos(todos, ordersAfter(existing.get(date) ?? [], todos.length), { date });
+    }
+
+    const groups = imported.groups.filter((group) => group.lists.length > 0);
+    const groupOrders = ordersAfter(await storage.listGroups(), groups.length);
+    groups.forEach((group, g) => {
+      const groupId = newId();
+      changes.push(
+        ...patch('listGroup', groupId, {
+          name: group.name.slice(0, MAX_TEXT),
+          order: groupOrders[g],
+          deleted: false,
+        }),
+      );
+      const listOrders = ordersAfter([], group.lists.length);
+      group.lists.forEach((list, l) => {
+        const listId = newId();
+        const name = list.name.slice(0, MAX_TEXT);
+        changes.push(
+          ...patch('list', listId, { name, groupId, order: listOrders[l], deleted: false }),
+        );
+        addTodos(list.todos, ordersAfter([], list.todos.length), { listId });
+      });
+    });
+    await commit(changes);
   });
 }
 

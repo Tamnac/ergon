@@ -231,6 +231,15 @@ export class Database implements Storage {
     );
   }
 
+  allTodos(): Promise<Todo[]> {
+    return this.#select(
+      'todo',
+      `SELECT * FROM todo WHERE deleted = 0 AND skipped = 0
+       AND (date IS NOT NULL OR "listId" IN (SELECT id FROM list WHERE deleted = 0))
+       ORDER BY date, "order", id`,
+    );
+  }
+
   listTodos(): Promise<Todo[]> {
     return this.#select(
       'todo',

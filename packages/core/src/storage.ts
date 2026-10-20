@@ -34,6 +34,8 @@ export interface Storage {
    * case-insensitive for ASCII. Day todos nearest to `today` come first, then list todos.
    */
   search(query: string, today: DateStr, limit: number): Promise<Todo[]>;
+  /** Every stored todo on a day or in a list, by date then order; for export and import. */
+  allTodos(): Promise<Todo[]>;
   listTodos(): Promise<Todo[]>;
   recurrences(): Promise<Recurrence[]>;
   /** Stored occurrences of a recurrence, including skipped ones. */

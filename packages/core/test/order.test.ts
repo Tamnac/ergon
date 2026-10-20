@@ -1,11 +1,25 @@
 import { describe, expect, it } from 'vitest';
-import { compareOrder, orderAt, type Ordered } from '../src';
+import { compareOrder, orderAt, ordersAfter, type Ordered } from '../src';
 
 function insert(items: Ordered[], index: number, id: string): Ordered[] {
   const { order, rekeyed } = orderAt(items, index);
   const updated = items.map((item) => rekeyed.find((r) => r.id === item.id) ?? item);
   return [...updated, { id, order }].toSorted(compareOrder);
 }
+
+describe('ordersAfter', () => {
+  it('sorts after every sibling', () => {
+    const siblings = [
+      { id: 'a', order: 'a1' },
+      { id: 'b', order: 'a0' },
+    ];
+    const keys = ordersAfter(siblings, 3);
+    expect(keys).toHaveLength(3);
+    expect(keys.toSorted()).toEqual(keys);
+    expect(keys[0]! > 'a1').toBe(true);
+    expect(ordersAfter([], 2).toSorted()).toEqual(ordersAfter([], 2));
+  });
+});
 
 describe('orderAt', () => {
   it('inserts at start, middle and end', () => {

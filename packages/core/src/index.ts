@@ -9,6 +9,7 @@ export * from './reminder';
 export * from './rollover';
 export * from './search';
 export * from './storage';
+export * from './transfer';
 export * from './sync/account';
 export * from './sync/api';
 export * from './sync/crypto';

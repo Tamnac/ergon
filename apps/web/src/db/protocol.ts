@@ -7,6 +7,7 @@ export const storageMethods = [
   'todoMarks',
   'reminders',
   'search',
+  'allTodos',
   'listTodos',
   'recurrences',
   'seriesTodos',

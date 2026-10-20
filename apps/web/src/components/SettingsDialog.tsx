@@ -1,4 +1,4 @@
-import { type DayCount, type InkDetail, type Theme } from '@ergon/core';
+import { ImportError, type DayCount, type InkDetail, type Theme } from '@ergon/core';
 import { disable, enable, isEnabled } from '@tauri-apps/plugin-autostart';
 import { For, Show, createResource, createSignal, onCleanup, onMount } from 'solid-js';
 import { updateSettings } from '../state/actions';
@@ -29,6 +29,7 @@ import {
   remindersOn,
   syncOn,
 } from '../state/reminders';
+import { exportAs, importTeuxDeux } from '../state/transfer';
 import { setSettingsOpen, settingsOpen } from '../state/view';
 import { Dialog } from './Dialog';
 
@@ -166,6 +167,8 @@ export function SettingsDialog() {
 
       <HandwritingSettings />
 
+      <DataSettings />
+
       <Show when={isDesktop}>
         <DesktopSettings />
       </Show>
@@ -212,6 +215,78 @@ function ReminderSettings() {
         {(message) => (
           <span class="sync-hint" role="alert">
             {message()}
+          </span>
+        )}
+      </Show>
+    </fieldset>
+  );
+}
+
+function DataSettings() {
+  let file!: HTMLInputElement;
+  const [message, setMessage] = createSignal<string>();
+  const [failed, setFailed] = createSignal(false);
+
+  const report = (text: string, error = false) => {
+    setFailed(error);
+    setMessage(text);
+  };
+
+  const run = async (task: () => Promise<string | void>) => {
+    report('');
+    try {
+      const done = await task();
+      if (done) report(done);
+    } catch (cause) {
+      report(cause instanceof ImportError ? cause.message : `Failed: ${String(cause)}`, true);
+    }
+  };
+
+  const plural = (count: number, noun: string) => `${count} ${noun}${count === 1 ? '' : 's'}`;
+
+  const importFile = (selected: File | undefined) =>
+    run(async () => {
+      if (!selected) return;
+      const { todos, lists } = await importTeuxDeux(selected);
+      return `Imported ${plural(todos, 'todo')} and ${plural(lists, 'list')}.`;
+    });
+
+  return (
+    <fieldset class="field">
+      <legend class="field-label">Your data</legend>
+      <div class="field-row">
+        <button type="button" class="button" onClick={() => void run(() => exportAs('json'))}>
+          Export JSON
+        </button>
+        <button type="button" class="button" onClick={() => void run(() => exportAs('markdown'))}>
+          Export Markdown
+        </button>
+      </div>
+      <div class="field-row">
+        <button type="button" class="button" onClick={() => file.click()}>
+          Import from TeuxDeux
+        </button>
+        <input
+          ref={file}
+          type="file"
+          hidden
+          accept=".json,.csv,application/json,text/csv"
+          aria-label="TeuxDeux backup file"
+          onChange={(e) => {
+            const selected = e.currentTarget.files?.[0];
+            e.currentTarget.value = '';
+            void importFile(selected);
+          }}
+        />
+      </div>
+      <span class="sync-hint">
+        Import the data.json or data.csv of a TeuxDeux backup. Todos are added to their days, and
+        its lists as a new tab.
+      </span>
+      <Show when={message()}>
+        {(text) => (
+          <span class="sync-hint" role={failed() ? 'alert' : 'status'}>
+            {text()}
           </span>
         )}
       </Show>

@@ -100,6 +100,20 @@ describe('Database', () => {
     expect(await db.search('milk', today, 2)).toHaveLength(2);
   });
 
+  it('returns every stored todo of days and live lists', async () => {
+    const db = await openDb();
+    await db.write([
+      ...todo('b', '2026-10-02'),
+      ...todo('a', '2026-10-01'),
+      ...todo('gone', '2026-10-01', { deleted: true }),
+      ...patch('list', 'l', { name: 'L', groupId: 'g' }),
+      ...patch('todo', 'listed', { text: 't', listId: 'l', order: 'a0' }),
+      ...patch('list', 'dead', { name: 'D', groupId: 'g', deleted: true }),
+      ...patch('todo', 'orphan', { text: 't', listId: 'dead', order: 'a0' }),
+    ]);
+    expect((await db.allTodos()).map((t) => t.id)).toEqual(['listed', 'a', 'b']);
+  });
+
   it('hides tombstoned rows', async () => {
     const db = await openDb();
     await db.write(todo('a', today));
