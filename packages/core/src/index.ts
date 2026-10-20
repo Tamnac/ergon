@@ -3,6 +3,7 @@ export * from './hlc';
 export * from './ink';
 export * from './merge';
 export * from './model';
+export * from './occasion';
 export * from './order';
 export * from './recurrence';
 export * from './reminder';

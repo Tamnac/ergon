@@ -1,4 +1,4 @@
-import { decodeInk, encodeInk, type Stroke, type Todo } from '@ergon/core';
+import { completionOccasion, decodeInk, encodeInk, type Stroke, type Todo } from '@ergon/core';
 import { For, Show, createEffect, onMount } from 'solid-js';
 import { makeDraggable } from '../lib/dnd';
 import { cancelCompletion, isCompleting, playCompletion } from '../lib/effects';
@@ -29,7 +29,8 @@ import { InkSurface } from './InkSurface';
 import { InlineInput } from './InlineInput';
 import { askScope } from './ScopeDialog';
 
-export function TodoItem(props: { todo: Todo; columnKey: string }) {
+/** `siblings` are the todos of its day or list in display order. */
+export function TodoItem(props: { todo: Todo; siblings: readonly Todo[]; columnKey: string }) {
   let item!: HTMLLIElement;
   let label: HTMLSpanElement | undefined;
   let inkRect: DOMRect | undefined;
@@ -63,8 +64,9 @@ export function TodoItem(props: { todo: Todo; columnKey: string }) {
   const toggle = () => {
     const done = !props.todo.done;
     void setDone(props.todo, done);
-    if (done && label) void playCompletion(props.todo.id, label);
-    else cancelCompletion(props.todo.id);
+    if (done && label) {
+      void playCompletion(props.todo.id, label, completionOccasion(props.siblings, props.todo.id));
+    } else cancelCompletion(props.todo.id);
   };
 
   /** Deletes the todo, asking which occurrences if it repeats; `before` runs once confirmed. */

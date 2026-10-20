@@ -29,7 +29,9 @@ export function Column(props: {
     <section class={`column ${props.class ?? ''}`} data-target={key()} aria-label={props.label}>
       {props.header}
       <ul class="todo-list" ref={(el) => registerDropZone(el, () => props.target)}>
-        <For each={props.items}>{(todo) => <TodoItem todo={todo} columnKey={key()} />}</For>
+        <For each={props.items}>
+          {(todo) => <TodoItem todo={todo} siblings={props.items} columnKey={key()} />}
+        </For>
         <Show when={adding()}>
           <li class="todo-row todo-add">
             <InlineInput

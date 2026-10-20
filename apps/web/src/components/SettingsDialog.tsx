@@ -11,6 +11,20 @@ import {
   quickAddShortcut,
   setCloseToTray,
 } from '../lib/desktop';
+import { effectChoices } from '../lib/effects';
+import { RANDOM, type EffectFrequency, type EffectIntensity } from '../lib/effect-policy';
+import {
+  effectChoice,
+  effectFrequency,
+  effectHaptics,
+  effectIntensity,
+  effectSound,
+  setEffectChoice,
+  setEffectFrequency,
+  setEffectHaptics,
+  setEffectIntensity,
+  setEffectSound,
+} from '../lib/effect-settings';
 import {
   inkDetail,
   inkPressure,
@@ -52,6 +66,16 @@ const dayCounts: DayCount[] = [1, 3, 5, 7];
 const inkDetails: [InkDetail, string][] = [
   ['fine', 'Fine'],
   ['compact', 'Compact'],
+];
+const effectIntensities: [EffectIntensity, string][] = [
+  ['off', 'Off'],
+  ['subtle', 'Subtle'],
+  ['dramatic', 'Dramatic'],
+];
+const effectFrequencies: [EffectFrequency, string][] = [
+  ['milestones', 'Sections and days'],
+  ['sometimes', 'Now and then'],
+  ['always', 'Every todo'],
 ];
 const weekStarts: [string, string][] = [
   ['', 'Locale default'],
@@ -164,6 +188,10 @@ export function SettingsDialog() {
       </label>
 
       <ReminderSettings />
+
+      <Show when={effectChoices().length > 0}>
+        <EffectSettings />
+      </Show>
 
       <HandwritingSettings />
 
@@ -313,6 +341,78 @@ function ExactAlarmHint() {
         Allow exact alarms
       </button>
     </Show>
+  );
+}
+
+function EffectSettings() {
+  return (
+    <fieldset class="field">
+      <legend class="field-label">Completion effects</legend>
+      <div class="segmented" role="radiogroup" aria-label="Intensity">
+        <For each={effectIntensities}>
+          {([value, label]) => (
+            <label>
+              <input
+                type="radio"
+                name="effectIntensity"
+                checked={effectIntensity() === value}
+                onChange={() => setEffectIntensity(value)}
+              />
+              {label}
+            </label>
+          )}
+        </For>
+      </div>
+      <Show when={effectIntensity() !== 'off'}>
+        <div class="segmented" role="radiogroup" aria-label="When">
+          <For each={effectFrequencies}>
+            {([value, label]) => (
+              <label>
+                <input
+                  type="radio"
+                  name="effectFrequency"
+                  checked={effectFrequency() === value}
+                  onChange={() => setEffectFrequency(value)}
+                />
+                {label}
+              </label>
+            )}
+          </For>
+        </div>
+        <select
+          class="select"
+          aria-label="Effect"
+          value={effectChoice()}
+          onChange={(e) => setEffectChoice(e.currentTarget.value)}
+        >
+          <option value={RANDOM}>Random</option>
+          <For each={effectChoices()}>
+            {(choice) => <option value={choice.name}>{choice.label}</option>}
+          </For>
+        </select>
+        <label class="checkbox">
+          <input
+            type="checkbox"
+            checked={effectSound()}
+            onChange={(e) => setEffectSound(e.currentTarget.checked)}
+          />
+          Play sounds
+        </label>
+        <label class="checkbox">
+          <input
+            type="checkbox"
+            checked={effectHaptics()}
+            onChange={(e) => setEffectHaptics(e.currentTarget.checked)}
+          />
+          Vibrate on impact
+        </label>
+        <span class="sync-hint">
+          Finishing the last todo under a heading, or the last on a day or list, always gets an
+          effect. Other todos follow the setting above. Nothing plays when the system asks for
+          reduced motion.
+        </span>
+      </Show>
+    </fieldset>
   );
 }
 
