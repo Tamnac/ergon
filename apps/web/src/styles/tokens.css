@@ -65,14 +65,14 @@
   --sidebar: 48px;
 }
 
-/* Phones (same breakpoint as `isPhone`): one text step up and taller rows for touch. */
+/* Phones (same breakpoint as `isPhone`): larger text and taller rows for touch. */
 @media (max-width: 479px) {
   :root {
-    --text-xs: 0.75rem;
-    --text-sm: 0.875rem;
-    --text-md: 1rem;
-    --text-lg: 1.25rem;
-    --row: 38px;
+    --text-xs: 0.9375rem;
+    --text-sm: 1.0938rem;
+    --text-md: 1.25rem;
+    --text-lg: 1.5rem;
+    --row: 46px;
   }
 }
 

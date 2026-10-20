@@ -201,20 +201,20 @@
 .app.is-phone .todo-check {
   position: static;
   flex: none;
-  width: 18px;
-  height: 18px;
+  width: 22px;
+  height: 22px;
   opacity: 1;
 }
 
 .app.is-phone .todo-check .icon {
-  width: 14px;
-  height: 14px;
+  width: 17px;
+  height: 17px;
 }
 
 .app.is-phone .todo-menu,
 .app.is-phone .todo-repeat {
-  width: 24px;
-  height: 24px;
+  width: 28px;
+  height: 28px;
 }
 
 .app.is-phone .todo-menu {
@@ -227,8 +227,8 @@
 }
 
 .app.is-phone .todo-reminder {
-  min-width: 24px;
-  height: 24px;
+  min-width: 28px;
+  height: 28px;
 }
 
 .todo.is-heading {
