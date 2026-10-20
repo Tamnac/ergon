@@ -1,5 +1,5 @@
 import { expect, test, type Locator, type Page } from '@playwright/test';
-import { addTodos, day, openApp } from './helpers';
+import { addTodos, day, openApp, todoAction } from './helpers';
 
 test.beforeEach(async ({ page }) => {
   await openApp(page);
@@ -146,7 +146,7 @@ test('a mouse click on the writing line still opens the add input', async ({ pag
 test('repeats handwritten todos', async ({ page }) => {
   await write(page, day(page));
   await page.keyboard.press('Enter');
-  await inkRows(day(page)).getByRole('button', { name: 'Repeat' }).click();
+  await todoAction(inkRows(day(page)), 'Repeat');
   const dialog = page.getByRole('dialog', { name: 'Repeat' });
   await dialog.getByRole('combobox', { name: 'Repeat' }).selectOption('daily');
   await dialog.getByRole('button', { name: 'Save' }).click();

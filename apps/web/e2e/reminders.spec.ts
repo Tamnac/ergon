@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { addTodos, day, openApp, todo } from './helpers';
+import { addTodos, day, openApp, todo, todoAction } from './helpers';
 
 test.beforeEach(async ({ page }) => {
   await openApp(page);
@@ -12,7 +12,7 @@ async function remindAt(
   time: string,
   scope?: 'This and following',
 ) {
-  await todo(day(page, offset), text).getByRole('button', { name: 'Reminder' }).click();
+  await todoAction(todo(day(page, offset), text), 'Reminder');
   const dialog = page.getByRole('dialog', { name: 'Reminder' });
   await dialog.getByLabel('Remind me at').fill(time);
   if (scope) await dialog.getByLabel(scope).check();
@@ -32,7 +32,7 @@ test('sets and removes a reminder', async ({ page }) => {
   await page.reload();
   await expect(reminder(page, 0, 'Call dentist')).toContainText('9:30');
 
-  await todo(day(page), 'Call dentist').getByRole('button', { name: 'Reminder' }).click();
+  await todoAction(todo(day(page), 'Call dentist'), 'Reminder');
   await page
     .getByRole('dialog', { name: 'Reminder' })
     .getByRole('button', { name: 'Remove' })
@@ -50,7 +50,7 @@ test('opens the reminder dialog with B', async ({ page }) => {
 test('opens the reminder dialog beside the todo', async ({ page }) => {
   await addTodos(day(page), 'Pay rent');
   const row = (await todo(day(page), 'Pay rent').boundingBox())!;
-  await todo(day(page), 'Pay rent').getByRole('button', { name: 'Reminder' }).click();
+  await todoAction(todo(day(page), 'Pay rent'), 'Reminder');
   const dialog = (await page.getByRole('dialog', { name: 'Reminder' }).boundingBox())!;
   expect(dialog.x).toBeGreaterThanOrEqual(row.x + row.width);
   expect(dialog.y).toBeLessThanOrEqual(row.y + row.height);
@@ -59,7 +59,7 @@ test('opens the reminder dialog beside the todo', async ({ page }) => {
 
 test('sets a reminder on following occurrences of a repeating todo', async ({ page }) => {
   await addTodos(day(page), 'Stretch');
-  await todo(day(page), 'Stretch').getByRole('button', { name: 'Repeat' }).click();
+  await todoAction(todo(day(page), 'Stretch'), 'Repeat');
   const repeat = page.getByRole('dialog', { name: 'Repeat' });
   await repeat.getByRole('combobox', { name: 'Repeat' }).selectOption('daily');
   await repeat.getByRole('button', { name: 'Save' }).click();

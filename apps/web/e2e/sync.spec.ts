@@ -1,5 +1,5 @@
 import { expect, test, type Browser, type Page } from '@playwright/test';
-import { addTodos, day, openApp, todo } from './helpers';
+import { addTodos, day, openApp, todo, todoAction } from './helpers';
 
 /** A separate browser context, so a separate local database: another device. */
 async function newDevice(browser: Browser): Promise<Page> {
@@ -31,7 +31,7 @@ test('syncs todos between devices', async ({ browser }) => {
   await expect(todo(day(b), 'Written on A')).toBeVisible();
   await expect(todo(day(a), 'Written on B')).toBeVisible();
 
-  await todo(day(a), 'Written on A').getByRole('button', { name: 'Mark done' }).click();
+  await todoAction(todo(day(a), 'Written on A'), 'Mark done');
   await expect(todo(day(b), 'Written on A')).toHaveClass(/is-done/);
 });
 
@@ -74,7 +74,7 @@ test('uploads upcoming reminders without their text', async ({ browser }) => {
       request.url().endsWith('/api/v1/reminders') &&
       request.postData()?.includes('"at"') === true,
   );
-  await todo(day(a, 1), 'Secret errand').getByRole('button', { name: 'Reminder' }).click();
+  await todoAction(todo(day(a, 1), 'Secret errand'), 'Reminder');
   await a.getByRole('dialog', { name: 'Reminder' }).getByRole('button', { name: 'Save' }).click();
 
   const { reminders } = (await upload).postDataJSON() as {

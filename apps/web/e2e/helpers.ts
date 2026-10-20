@@ -13,6 +13,12 @@ export const day = (page: Page, offset = 0) =>
 export const todo = (scope: Page | Locator, text: string) =>
   scope.locator('.todo', { hasText: text });
 
+/** Runs an action from the menu of a todo row. */
+export async function todoAction(row: Locator, name: string) {
+  await row.getByRole('button', { name: 'Todo actions' }).click();
+  await row.page().getByRole('menuitem', { name }).click();
+}
+
 /** Loads the app and waits until the database is ready (the default tab is seeded). */
 export async function openApp(page: Page) {
   await page.goto('/');

@@ -1,12 +1,12 @@
 import { expect, test, type Page } from '@playwright/test';
-import { addTodos, day, openApp, todo } from './helpers';
+import { addTodos, day, openApp, todo, todoAction } from './helpers';
 
 test.beforeEach(async ({ page }) => {
   await openApp(page);
 });
 
 async function repeatDaily(page: Page, text: string) {
-  await todo(day(page), text).getByRole('button', { name: 'Repeat' }).click();
+  await todoAction(todo(day(page), text), 'Repeat');
   const dialog = page.getByRole('dialog', { name: 'Repeat' });
   await dialog.getByRole('combobox', { name: 'Repeat' }).selectOption('daily');
   await expect(dialog.getByLabel('Next dates')).toBeVisible();
@@ -30,7 +30,7 @@ test('repeats a todo and changes single occurrences', async ({ page }) => {
     await expect(todo(day(page, offset), 'Water plants')).toBeVisible();
   }
 
-  await todo(day(page, 1), 'Water plants').getByRole('button', { name: 'Mark done' }).click();
+  await todoAction(todo(day(page, 1), 'Water plants'), 'Mark done');
   await expect(todo(day(page, 1), 'Water plants')).toHaveClass(/is-done/);
   await expect(todo(day(page, 2), 'Water plants')).not.toHaveClass(/is-done/);
 
@@ -41,7 +41,7 @@ test('repeats a todo and changes single occurrences', async ({ page }) => {
   await page.getByRole('button', { name: 'Undo' }).click();
   await expect(todo(day(page, 2), 'Water plants')).toBeVisible();
 
-  await todo(day(page, 3), 'Water plants').getByRole('button', { name: 'Delete' }).click();
+  await todoAction(todo(day(page, 3), 'Water plants'), 'Delete');
   await choose(page, 'Delete repeating todo', 'Only this one');
   await expect(todo(day(page, 3), 'Water plants')).toHaveCount(0);
   await expect(todo(day(page, 4), 'Water plants')).toBeVisible();
@@ -86,9 +86,9 @@ test('stops repeating', async ({ page }) => {
   await dialog.getByRole('combobox', { name: 'Repeat' }).selectOption('none');
   await dialog.getByRole('button', { name: 'Save' }).click();
   await expect(todo(day(page, 2), 'Stretch')).toBeVisible();
-  await expect(
-    todo(day(page, 2), 'Stretch').getByRole('button', { name: 'Repeat' }),
-  ).not.toHaveClass(/is-on/);
+  await expect(todo(day(page, 2), 'Stretch').getByRole('button', { name: 'Repeat' })).toHaveCount(
+    0,
+  );
   await expect(todo(day(page, 3), 'Stretch')).toHaveCount(0);
   await expect(todo(day(page, 1), 'Stretch')).toBeVisible();
 });

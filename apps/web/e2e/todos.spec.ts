@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { addTodos, day, openApp, todo } from './helpers';
+import { addTodos, day, openApp, todo, todoAction } from './helpers';
 
 test.beforeEach(async ({ page }) => {
   await openApp(page);
@@ -21,16 +21,39 @@ test('edits, completes, undoes and deletes', async ({ page }) => {
   await input.press('Enter');
   await expect(todo(today, 'Write the report')).toBeVisible();
 
-  await todo(today, 'Write the report').getByRole('button', { name: 'Mark done' }).click();
+  await todoAction(todo(today, 'Write the report'), 'Mark done');
   await expect(todo(today, 'Write the report')).toHaveClass(/is-done/);
 
   await page.locator('body').press('Control+z');
   await expect(todo(today, 'Write the report')).not.toHaveClass(/is-done/);
 
-  await todo(today, 'Write the report').getByRole('button', { name: 'Delete' }).click();
+  await todoAction(todo(today, 'Write the report'), 'Delete');
   await expect(today.locator('.todo')).toHaveCount(0);
   await page.getByRole('button', { name: 'Undo' }).click();
   await expect(todo(today, 'Write the report')).toBeVisible();
+});
+
+test('completes with a right click and not with a checkbox', async ({ page }) => {
+  await addTodos(day(page), 'Water plants', '# Evening');
+  await expect(
+    todo(day(page), 'Water plants').getByRole('button', { name: 'Mark done' }),
+  ).toBeHidden();
+
+  await todo(day(page), 'Water plants').locator('.todo-text').click({ button: 'right' });
+  await expect(todo(day(page), 'Water plants')).toHaveClass(/is-done/);
+  await todo(day(page), 'Water plants').locator('.todo-text').click({ button: 'right' });
+  await expect(todo(day(page), 'Water plants')).not.toHaveClass(/is-done/);
+
+  await todo(day(page), 'Evening').click({ button: 'right' });
+  await expect(todo(day(page), 'Evening')).not.toHaveClass(/is-done/);
+});
+
+test('opens the todo menu with the context menu key', async ({ page }) => {
+  await addTodos(day(page), 'Water plants');
+  await todo(day(page), 'Water plants').focus();
+  await page.keyboard.press('ContextMenu');
+  await page.getByRole('menuitem', { name: 'Mark done' }).click();
+  await expect(todo(day(page), 'Water plants')).toHaveClass(/is-done/);
 });
 
 test('creates headings and renders links', async ({ page }) => {

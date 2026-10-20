@@ -140,13 +140,21 @@
   color: var(--accent-fg);
 }
 
-.todo-delete,
+.todo-menu,
 .todo-repeat,
 .todo-reminder {
   flex: none;
   width: 20px;
   height: 20px;
+}
+
+.todo-menu {
   opacity: 0;
+}
+
+.todo-menu .icon {
+  width: 16px;
+  height: 16px;
 }
 
 .todo-reminder {
@@ -168,10 +176,15 @@
   height: 13px;
 }
 
-.todo-repeat.is-on,
-.todo-reminder.is-on,
-.todo:is(:hover, :focus-within) :is(.todo-check, .todo-delete, .todo-repeat, .todo-reminder) {
+.todo:is(:hover, :focus-within) :is(.todo-check, .todo-menu) {
   opacity: 1;
+}
+
+/* With a mouse, a todo is completed with Space, a right click or its menu. */
+@media (hover: hover) {
+  .app:not(.is-phone) .todo-check {
+    display: none;
+  }
 }
 
 .todo-check:hover {
@@ -180,9 +193,7 @@
 
 @media (hover: none) {
   .todo-check,
-  .todo-delete,
-  .todo-repeat,
-  .todo-reminder {
+  .todo-menu {
     opacity: 1;
   }
 }
@@ -200,10 +211,19 @@
   height: 14px;
 }
 
-.app.is-phone .todo-delete,
+.app.is-phone .todo-menu,
 .app.is-phone .todo-repeat {
   width: 24px;
   height: 24px;
+}
+
+.app.is-phone .todo-menu {
+  color: var(--fg);
+}
+
+.app.is-phone .todo-menu .icon {
+  width: 18px;
+  height: 18px;
 }
 
 .app.is-phone .todo-reminder {

@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { addTodos, day, openApp, todo } from './helpers';
+import { addTodos, day, openApp, todo, todoAction } from './helpers';
 
 async function openSettings(page: Page) {
   await page.getByRole('button', { name: 'Settings' }).click();
@@ -12,7 +12,7 @@ test.beforeEach(async ({ page }) => {
 
 test('exports JSON and Markdown', async ({ page }) => {
   await addTodos(day(page), 'Write report', '# Evening');
-  await todo(day(page), 'Write report').getByRole('button', { name: 'Mark done' }).click();
+  await todoAction(todo(day(page), 'Write report'), 'Mark done');
   const settings = await openSettings(page);
 
   const markdown = page.waitForEvent('download');

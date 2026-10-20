@@ -27,6 +27,7 @@ import { Icon } from './Icon';
 import { Ink } from './Ink';
 import { InkSurface } from './InkSurface';
 import { InlineInput } from './InlineInput';
+import { Menu, type MenuItem } from './Menu';
 import { askScope } from './ScopeDialog';
 
 /** `siblings` are the todos of its day or list in display order. */
@@ -103,6 +104,29 @@ export function TodoItem(props: { todo: Todo; siblings: readonly Todo[]; columnK
       ? 'this'
       : askScope('Edit repeating todo', ['this', 'following', 'all'] as const);
 
+  const actions = (): MenuItem[] => [
+    ...(heading()
+      ? []
+      : [{ label: props.todo.done ? 'Mark not done' : 'Mark done', onSelect: toggle }]),
+    ...(onDay() && !heading()
+      ? [{ label: 'Reminder', onSelect: () => setReminding(props.todo) }]
+      : []),
+    ...(onDay() ? [{ label: 'Repeat', onSelect: () => setRepeating(props.todo) }] : []),
+    { label: 'Delete', onSelect: () => void remove() },
+  ];
+
+  /**
+   * A mouse right click completes the todo, the context menu key opens its menu. Touch keeps
+   * the system's long press, which starts a drag.
+   */
+  const onContextMenu = (event: MouseEvent) => {
+    const target = event.target as Element;
+    if (editing() || target.closest('a, input') || !matchMedia('(hover: hover)').matches) return;
+    event.preventDefault();
+    if (event.button !== 2) item.querySelector<HTMLButtonElement>('.todo-menu')?.click();
+    else if (!heading()) toggle();
+  };
+
   const focusSibling = (forward: boolean) => {
     let next = forward ? item.nextElementSibling : item.previousElementSibling;
     while (next && !(next instanceof HTMLElement && 'dragItem' in next.dataset)) {
@@ -166,6 +190,7 @@ export function TodoItem(props: { todo: Todo; siblings: readonly Todo[]; columnK
       tabIndex={0}
       data-id={props.todo.id}
       onKeyDown={onKeyDown}
+      onContextMenu={onContextMenu}
       onClick={(event) => {
         if (inked() || (event.target as Element).closest('a, button')) return;
         setEditingId(props.todo.id);
@@ -215,46 +240,34 @@ export function TodoItem(props: { todo: Todo; siblings: readonly Todo[]; columnK
             >
               {(ink) => <Ink ref={(element) => (label = element)} ink={ink()} />}
             </Show>
-            <Show when={onDay() && !heading()}>
-              <button
-                type="button"
-                class="todo-reminder icon-button"
-                classList={{ 'is-on': props.todo.reminder !== null }}
-                tabIndex={-1}
-                aria-label="Reminder"
-                title={
-                  props.todo.reminder ? `Reminds at ${formatTime(props.todo.reminder)}` : 'Remind'
-                }
-                onClick={() => setReminding(props.todo)}
-              >
-                <Icon name="bell" />
-                <Show when={props.todo.reminder}>
-                  {(time) => <span class="todo-reminder-time">{formatTime(time())}</span>}
-                </Show>
-              </button>
+            <Show when={onDay() && !heading() && props.todo.reminder}>
+              {(time) => (
+                <button
+                  type="button"
+                  class="todo-reminder icon-button"
+                  tabIndex={-1}
+                  aria-label="Reminder"
+                  title={`Reminds at ${formatTime(time())}`}
+                  onClick={() => setReminding(props.todo)}
+                >
+                  <Icon name="bell" />
+                  <span class="todo-reminder-time">{formatTime(time())}</span>
+                </button>
+              )}
             </Show>
-            <Show when={onDay()}>
+            <Show when={onDay() && recurring()}>
               <button
                 type="button"
                 class="todo-repeat icon-button"
-                classList={{ 'is-on': recurring() }}
                 tabIndex={-1}
                 aria-label="Repeat"
-                title={recurring() ? 'Repeats' : 'Repeat'}
+                title="Repeats"
                 onClick={() => setRepeating(props.todo)}
               >
                 <Icon name="repeat" />
               </button>
             </Show>
-            <button
-              type="button"
-              class="todo-delete icon-button"
-              tabIndex={-1}
-              aria-label="Delete"
-              onClick={() => void remove()}
-            >
-              <Icon name="minus" />
-            </button>
+            <Menu label="Todo actions" class="todo-menu" tabIndex={-1} items={actions()} />
           </>
         }
       >
