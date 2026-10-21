@@ -52,8 +52,13 @@ test('opens the todo menu with the context menu key', async ({ page }) => {
   await addTodos(day(page), 'Water plants');
   await todo(day(page), 'Water plants').focus();
   await page.keyboard.press('ContextMenu');
-  await page.getByRole('menuitem', { name: 'Mark done' }).click();
+  await expect(page.getByRole('menuitem', { name: 'Mark done' })).toBeFocused();
+  await page.keyboard.press('ArrowDown');
+  await expect(page.getByRole('menuitem', { name: 'Reminder' })).toBeFocused();
+  await page.keyboard.press('ArrowUp');
+  await page.keyboard.press('Enter');
   await expect(todo(day(page), 'Water plants')).toHaveClass(/is-done/);
+  await expect(todo(day(page), 'Water plants')).toBeFocused();
 });
 
 test('reorders with Alt and the arrow keys', async ({ page }) => {

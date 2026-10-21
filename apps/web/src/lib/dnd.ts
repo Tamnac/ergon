@@ -24,7 +24,7 @@ export function makeDraggable(element: HTMLElement, options: DraggableOptions) {
   element.addEventListener('pointerdown', (down) => {
     if (down.button !== 0 || options.disabled(down)) return;
     if (document.documentElement.classList.contains('is-dragging')) return;
-    if ((down.target as Element).closest('input, button, a')) return;
+    if ((down.target as Element).closest('input, button, a, [popover]')) return;
 
     const touch = down.pointerType !== 'mouse';
     let session: DragSession | undefined;

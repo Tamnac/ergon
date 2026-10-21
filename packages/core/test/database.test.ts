@@ -100,6 +100,22 @@ describe('Database', () => {
     expect(await db.search('milk', today, 2)).toHaveLength(2);
   });
 
+  it('searches without regard to case outside ASCII and by where todos show', async () => {
+    const db = await openDb();
+    await db.write([
+      ...todo('upper', '2026-10-05', { text: 'Ärger mit dem Amt' }),
+      ...todo('lower', '2026-10-06', { text: 'ärger' }),
+      ...todo('other', '2026-10-06', { text: 'Ordnung' }),
+      ...todo('rolled', '2026-09-01', { text: 'Ärger old' }),
+      ...todo('near', '2026-09-28', { text: 'Ärger near' }),
+    ]);
+    const ids = async (query: string) => (await db.search(query, today, 10)).map((t) => t.id);
+    // 'rolled' shows on today (2026-09-26), so it sorts before 'near' two days later.
+    expect(await ids('ÄRGER')).toEqual(['rolled', 'near', 'upper', 'lower']);
+    expect(await ids('ärger amt')).toEqual(['upper']);
+    expect((await db.search('ärger', today, 2)).map((t) => t.id)).toEqual(['rolled', 'near']);
+  });
+
   it('returns every stored todo of days and live lists', async () => {
     const db = await openDb();
     await db.write([

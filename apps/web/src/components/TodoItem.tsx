@@ -137,7 +137,8 @@ export function TodoItem(props: { todo: Todo; siblings: readonly Todo[]; columnK
    */
   const onContextMenu = (event: MouseEvent) => {
     const target = event.target as Element;
-    if (editing() || target.closest('a, input') || !matchMedia('(hover: hover)').matches) return;
+    const native = target.closest('a, input, .menu') || !matchMedia('(hover: hover)').matches;
+    if (editing() || native) return;
     event.preventDefault();
     if (event.button !== 2) item.querySelector<HTMLButtonElement>('.todo-menu')?.click();
     else if (!heading()) toggle();
@@ -217,7 +218,7 @@ export function TodoItem(props: { todo: Todo; siblings: readonly Todo[]; columnK
       onKeyDown={onKeyDown}
       onContextMenu={onContextMenu}
       onClick={(event) => {
-        if (inked() || (event.target as Element).closest('a, button')) return;
+        if (inked() || (event.target as Element).closest('a, button, .menu')) return;
         setEditingId(props.todo.id);
       }}
       onPointerDown={(event) => {

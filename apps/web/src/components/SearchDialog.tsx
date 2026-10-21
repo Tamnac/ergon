@@ -28,8 +28,10 @@ export function SearchDialog() {
     const last = hits().length - 1;
     if (event.key === 'ArrowDown') setActive((i) => Math.min(i + 1, last));
     else if (event.key === 'ArrowUp') setActive((i) => Math.max(i - 1, 0));
-    else if (event.key === 'Enter') choose(hits()[active()]);
-    else return;
+    else if (event.key === 'Enter') {
+      // Not while results are stale or an input method is composing.
+      if (!found.loading && !event.isComposing) choose(hits()[active()]);
+    } else return;
     event.preventDefault();
     document.getElementById(`${id}-${active()}`)?.scrollIntoView({ block: 'nearest' });
   };

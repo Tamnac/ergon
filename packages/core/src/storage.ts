@@ -31,7 +31,8 @@ export interface Storage {
   reminders(from: DateStr, to: DateStr): Promise<Reminder[]>;
   /**
    * Stored todos (not virtual occurrences, not ink) whose text contains every word of `query`,
-   * case-insensitive for ASCII. Day todos nearest to `today` come first, then list todos.
+   * ignoring case. Day todos nearest to `today` (where they show, see `effectiveDate`) come
+   * first, then list todos.
    */
   search(query: string, today: DateStr, limit: number): Promise<Todo[]>;
   /** Every stored todo on a day or in a list, by date then order; for export and import. */

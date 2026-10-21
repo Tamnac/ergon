@@ -211,5 +211,6 @@ function fromCsv(source: string): Imported {
 
 /** Reads a TeuxDeux export: the `data.json` or `data.csv` of its backup. */
 export function parseTeuxDeux(source: string): Imported {
-  return source.trimStart().startsWith('{') ? fromJson(source) : fromCsv(source);
+  const text = source.replace(/^\uFEFF/, '').trimStart();
+  return text.startsWith('{') ? fromJson(text) : fromCsv(text);
 }

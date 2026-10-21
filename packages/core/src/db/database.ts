@@ -4,7 +4,7 @@ import { wins } from '../merge';
 import { INK_LABEL } from '../ink';
 import { compareOrder, type Ordered } from '../order';
 import { occurrenceId, virtualOccurrences } from '../recurrence';
-import { searchWords } from '../search';
+import { matchesWords, searchWords } from '../search';
 import { isTime, type Reminder } from '../reminder';
 import {
   SETTINGS_ID,
@@ -218,17 +218,29 @@ export class Database implements Storage {
     });
   }
 
-  search(query: string, today: DateStr, limit: number): Promise<Todo[]> {
+  async search(query: string, today: DateStr, limit: number): Promise<Todo[]> {
     const words = searchWords(query);
-    if (words.length === 0) return Promise.resolve([]);
-    const matches = words.map(() => "text LIKE ? ESCAPE '\\'").join(' AND ');
-    return this.#select(
+    if (words.length === 0) return [];
+    // LIKE folds case for ASCII only: it narrows by ASCII words, `matchesWords` decides.
+    const ascii = words.filter((word) => /^[ -~]+$/.test(word));
+    const exact = ascii.length === words.length;
+    const matches = ascii.map(() => "AND text LIKE ? ESCAPE '\\'").join(' ');
+    const rows = await this.#select(
       'todo',
-      `SELECT * FROM todo WHERE deleted = 0 AND skipped = 0 AND ink IS NULL AND ${matches}
+      `SELECT * FROM todo WHERE deleted = 0 AND skipped = 0 AND ink IS NULL ${matches}
        AND (date IS NOT NULL OR "listId" IN (SELECT id FROM list WHERE deleted = 0))
-       ORDER BY date IS NULL, abs(julianday(date) - julianday(?)), "order", id LIMIT ?`,
-      [...words.map((word) => `%${word.replace(/[\\%_]/g, '\\$&')}%`), today, limit],
+       ORDER BY date IS NULL,
+         abs(julianday(CASE WHEN ${ROLLS_OVER} THEN ? ELSE date END) - julianday(?)), "order", id
+       ${exact ? 'LIMIT ?' : ''}`,
+      [
+        ...ascii.map((word) => `%${word.replace(/[\\%_]/g, '\\$&')}%`),
+        today,
+        today,
+        today,
+        ...(exact ? [limit] : []),
+      ],
     );
+    return exact ? rows : rows.filter((todo) => matchesWords(todo.text, words)).slice(0, limit);
   }
 
   allTodos(): Promise<Todo[]> {

@@ -14,6 +14,12 @@ export const updateReady = () => waiting() !== null;
  */
 export function installServiceWorker() {
   if (!import.meta.env.PROD || isNative || !('serviceWorker' in navigator)) return;
+  // A new worker taking over means an update was applied, in this or another tab; the old page
+  // can no longer load its chunks. The first worker also takes over, without a reload.
+  const hadController = navigator.serviceWorker.controller !== null;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (hadController) location.reload();
+  });
   void navigator.serviceWorker.register('sw.js').then((registration) => {
     const watch = (worker: ServiceWorker) =>
       worker.addEventListener('statechange', () => {
@@ -33,10 +39,7 @@ export function installServiceWorker() {
   });
 }
 
-/** Switches to the waiting version and reloads the page. */
+/** Switches to the waiting version; every open tab then reloads. */
 export function applyUpdate() {
-  navigator.serviceWorker.addEventListener('controllerchange', () => location.reload(), {
-    once: true,
-  });
   waiting()?.postMessage({ type: 'skip-waiting' });
 }
