@@ -50,7 +50,7 @@ export const activeGroup = () => groups.find((g) => g.id === activeGroupId()) ??
 
 /** Width a day column needs including its gap, and the chrome around the grid. */
 const COLUMN_WIDTH = 170;
-const CHROME_WIDTH = 112;
+const CHROME_WIDTH = 96;
 
 /** The day count setting, capped by what fits the window. */
 export function dayCount(): number {

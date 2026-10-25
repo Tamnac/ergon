@@ -180,10 +180,21 @@
   opacity: 1;
 }
 
-/* With a mouse, a todo is completed with Space, a right click or its menu. */
+/*
+ * With a mouse, a todo is completed with Space, a right click or its menu. The menu button
+ * floats over the end of the row on hover instead of taking width from the text.
+ */
 @media (hover: hover) {
   .app:not(.is-phone) .todo-check {
     display: none;
+  }
+
+  .app:not(.is-phone) .todo-menu {
+    position: absolute;
+    right: var(--space-1);
+    top: 50%;
+    translate: 0 -50%;
+    background: var(--hover);
   }
 }
 
