@@ -45,7 +45,7 @@ test('completes with a right click and not with a checkbox', async ({ page }) =>
   await expect(todo(day(page), 'Water plants')).not.toHaveClass(/is-done/);
 
   await todo(day(page), 'Evening').click({ button: 'right' });
-  await expect(todo(day(page), 'Evening')).not.toHaveClass(/is-done/);
+  await expect(todo(day(page), 'Evening')).toHaveClass(/is-done/);
 });
 
 test('opens the todo menu with the context menu key', async ({ page }) => {

@@ -121,9 +121,7 @@ export function TodoItem(props: { todo: Todo; siblings: readonly Todo[]; columnK
       : askScope('Edit repeating todo', ['this', 'following', 'all'] as const);
 
   const actions = (): MenuItem[] => [
-    ...(heading()
-      ? []
-      : [{ label: props.todo.done ? 'Mark not done' : 'Mark done', onSelect: toggle }]),
+    { label: props.todo.done ? 'Mark not done' : 'Mark done', onSelect: toggle },
     ...(onDay() && !heading()
       ? [{ label: 'Reminder', onSelect: () => setReminding(props.todo) }]
       : []),
@@ -141,7 +139,7 @@ export function TodoItem(props: { todo: Todo; siblings: readonly Todo[]; columnK
     if (editing() || native) return;
     event.preventDefault();
     if (event.button !== 2) item.querySelector<HTMLButtonElement>('.todo-menu')?.click();
-    else if (!heading()) toggle();
+    else toggle();
   };
 
   const focusSibling = (forward: boolean) => {
@@ -177,7 +175,7 @@ export function TodoItem(props: { todo: Todo; siblings: readonly Todo[]; columnK
         setEditingId(props.todo.id);
         break;
       case ' ':
-        if (!heading()) toggle();
+        toggle();
         break;
       case 'Delete':
       case 'Backspace':
