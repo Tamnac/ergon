@@ -1,11 +1,7 @@
 import { persistedSignal } from './persisted';
-import { RANDOM, type EffectFrequency, type EffectIntensity } from './effect-policy';
+import { RANDOM, type EffectFrequency } from './effect-policy';
 
 // Per device, like the handwriting settings: what suits a phone doesn't suit a desktop.
-export const [effectIntensity, setEffectIntensity] = persistedSignal<EffectIntensity>(
-  'ergon.effectIntensity',
-  'subtle',
-);
 export const [effectFrequency, setEffectFrequency] = persistedSignal<EffectFrequency>(
   'ergon.effectFrequency',
   'milestones',

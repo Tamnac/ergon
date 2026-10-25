@@ -150,6 +150,45 @@ button:disabled {
   transform-origin: left center;
 }
 
+.effect-stamp,
+.effect-stamp-wave {
+  position: fixed;
+  translate: -50% -50%;
+  border-radius: 3px;
+}
+
+.effect-stamp {
+  padding: 0.05em 0.4em;
+  font-family: var(--font-display);
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--accent-text);
+  background: color-mix(in srgb, var(--bg) 85%, transparent);
+  box-shadow:
+    inset 0 0 0 2px var(--accent),
+    0 0 0 4px var(--bg),
+    0 0 0 5px var(--ring-c2);
+}
+
+.effect-flash {
+  position: fixed;
+  translate: -50% -50%;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--accent) 75%, white) 0%,
+    color-mix(in srgb, var(--accent) 45%, transparent) 35%,
+    transparent 70%
+  );
+}
+
+.effect-stamp-wave {
+  outline: 1px solid var(--ring-c1);
+}
+
 :root.is-dragging,
 :root.is-dragging * {
   cursor: grabbing !important;

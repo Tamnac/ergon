@@ -13,17 +13,15 @@ import {
 } from '../lib/desktop';
 import { applyAccent } from '../lib/accent';
 import { effectChoices } from '../lib/effects';
-import { RANDOM, type EffectFrequency, type EffectIntensity } from '../lib/effect-policy';
+import { RANDOM, type EffectFrequency } from '../lib/effect-policy';
 import {
   effectChoice,
   effectFrequency,
   effectHaptics,
-  effectIntensity,
   effectSound,
   setEffectChoice,
   setEffectFrequency,
   setEffectHaptics,
-  setEffectIntensity,
   setEffectSound,
 } from '../lib/effect-settings';
 import {
@@ -68,12 +66,8 @@ const inkDetails: [InkDetail, string][] = [
   ['fine', 'Fine'],
   ['compact', 'Compact'],
 ];
-const effectIntensities: [EffectIntensity, string][] = [
-  ['off', 'Off'],
-  ['subtle', 'Subtle'],
-  ['dramatic', 'Dramatic'],
-];
 const effectFrequencies: [EffectFrequency, string][] = [
+  ['never', 'Off'],
   ['milestones', 'Sections and days'],
   ['sometimes', 'Now and then'],
   ['always', 'Every todo'],
@@ -347,37 +341,22 @@ function EffectSettings() {
   return (
     <fieldset class="field">
       <legend class="field-label">Completion effects</legend>
-      <div class="segmented" role="radiogroup" aria-label="Intensity">
-        <For each={effectIntensities}>
+      <div class="segmented" role="radiogroup" aria-label="When">
+        <For each={effectFrequencies}>
           {([value, label]) => (
             <label>
               <input
                 type="radio"
-                name="effectIntensity"
-                checked={effectIntensity() === value}
-                onChange={() => setEffectIntensity(value)}
+                name="effectFrequency"
+                checked={effectFrequency() === value}
+                onChange={() => setEffectFrequency(value)}
               />
               {label}
             </label>
           )}
         </For>
       </div>
-      <Show when={effectIntensity() !== 'off'}>
-        <div class="segmented" role="radiogroup" aria-label="When">
-          <For each={effectFrequencies}>
-            {([value, label]) => (
-              <label>
-                <input
-                  type="radio"
-                  name="effectFrequency"
-                  checked={effectFrequency() === value}
-                  onChange={() => setEffectFrequency(value)}
-                />
-                {label}
-              </label>
-            )}
-          </For>
-        </div>
+      <Show when={effectFrequency() !== 'never'}>
         <select
           class="select"
           aria-label="Effect"

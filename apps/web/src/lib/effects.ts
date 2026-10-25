@@ -1,7 +1,7 @@
 import type { Occasion } from '@ergon/core';
 import { createSignal } from 'solid-js';
 import { celebrates, pickEffect } from './effect-policy';
-import { effectChoice, effectFrequency, effectIntensity, effectSound } from './effect-settings';
+import { effectChoice, effectFrequency, effectSound } from './effect-settings';
 import { haptic, type Haptic } from './haptics';
 
 /** At most this many special effects run at once; further completions get the strikethrough. */
@@ -14,7 +14,6 @@ export interface EffectContext {
   signal: AbortSignal;
   /** What was finished. Effects can play bigger for a section or a whole day. */
   occasion: Occasion;
-  intensity: 'subtle' | 'dramatic';
   /** Whether the user wants sound; effects stay silent without it. */
   sound: boolean;
   /** Vibrates, if the user has haptics on. */
@@ -71,8 +70,7 @@ export const effectChoices = () => [...registry].map(([name, { label }]) => ({ n
 
 /** The effect for this completion, or null for the plain strikethrough. */
 function chooseEffect(occasion: Occasion): string | null {
-  const settings = { intensity: effectIntensity(), frequency: effectFrequency() };
-  if (special.size >= MAX_SPECIAL || !celebrates(occasion, settings)) return null;
+  if (special.size >= MAX_SPECIAL || !celebrates(occasion, effectFrequency())) return null;
   return pickEffect(effectChoice(), [...registry.keys()]);
 }
 /** True while a todo's effect runs; the todo hides its own done styling meanwhile. */
@@ -91,7 +89,6 @@ export async function playCompletion(
   if (name) special.add(id);
   setActive(new Set(running.keys()));
   try {
-    const intensity = effectIntensity() === 'dramatic' ? 'dramatic' : 'subtle';
     await (name ? registry.get(name)!.effect : strikethrough)(
       element,
       element.getBoundingClientRect(),
@@ -99,7 +96,6 @@ export async function playCompletion(
         layer,
         signal: controller.signal,
         occasion,
-        intensity,
         sound: effectSound(),
         haptic,
       },

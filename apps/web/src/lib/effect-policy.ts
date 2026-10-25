@@ -1,9 +1,7 @@
 import type { Occasion } from '@ergon/core';
 
-export type EffectIntensity = 'off' | 'subtle' | 'dramatic';
-
-/** Which completions get an effect: all, a random few of the plain ones, or milestones only. */
-export type EffectFrequency = 'always' | 'sometimes' | 'milestones';
+/** Which completions get an effect: none, milestones only, a random few of the plain ones, or all. */
+export type EffectFrequency = 'never' | 'milestones' | 'sometimes' | 'always';
 
 /** Chance that a plain todo gets an effect with `sometimes`. Milestones always do. */
 export const SOMETIMES_CHANCE = 0.2;
@@ -17,10 +15,10 @@ export const RANDOM = 'random';
  */
 export function celebrates(
   occasion: Occasion,
-  { intensity, frequency }: { intensity: EffectIntensity; frequency: EffectFrequency },
+  frequency: EffectFrequency,
   random: () => number = Math.random,
 ): boolean {
-  if (intensity === 'off') return false;
+  if (frequency === 'never') return false;
   if (occasion !== 'todo' || frequency === 'always') return true;
   return frequency === 'sometimes' && random() < SOMETIMES_CHANCE;
 }
