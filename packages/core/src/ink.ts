@@ -167,9 +167,32 @@ function simplify(points: Stroke, tolerance: number, pressureWeight: number): St
  */
 function isRtl(strokes: readonly Stroke[]): boolean {
   const xs = strokes.flat().map(([x]) => x);
+  if (xs.some((x) => !Number.isFinite(x))) {
+    let score = 0;
+    for (let i = 0; i < xs.length; i++) {
+      for (let j = i + 1; j < xs.length; j++) score += Math.sign(xs[j]! - xs[i]!);
+    }
+    return score < 0;
+  }
+  const ranks = new Map(
+    [...new Set(xs)].toSorted((a, b) => a - b).map((x, index) => [x, index + 1]),
+  );
+  const counts = new Uint32Array(ranks.size + 1);
+  const add = (index: number) => {
+    for (; index < counts.length; index += index & -index) counts[index]!++;
+  };
+  const sum = (index: number) => {
+    let total = 0;
+    for (; index > 0; index -= index & -index) total += counts[index]!;
+    return total;
+  };
   let score = 0;
-  for (let i = 0; i < xs.length; i++) {
-    for (let j = i + 1; j < xs.length; j++) score += Math.sign(xs[j]! - xs[i]!);
+  for (let i = xs.length - 1; i >= 0; i--) {
+    const rank = ranks.get(xs[i]!)!;
+    const less = sum(rank - 1);
+    const equal = sum(rank) - less;
+    score += xs.length - 1 - i - 2 * less - equal;
+    add(rank);
   }
   return score < 0;
 }

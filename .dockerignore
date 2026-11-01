@@ -9,6 +9,17 @@
 apps/server/ergon
 apps/server/ergon.exe
 apps/server/internal/web/static
+apps/desktop/src-tauri/target
+apps/desktop/src-tauri/gen/schemas
+apps/desktop/src-tauri/gen/android/.gradle
+apps/desktop/src-tauri/gen/android/**/build
+apps/desktop/src-tauri/gen/android/local.properties
+**/*.jks
+**/*.keystore
+**/.env
+**/.env.*
+!**/.env.example
 ref.png
 PLAN.md
+AGENTS.md
 skills

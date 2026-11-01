@@ -78,6 +78,26 @@ describe('ink encoding', () => {
     );
   });
 
+  it('handles tied x positions when detecting right-to-left writing', () => {
+    const strokes: Stroke[] = [
+      [
+        [0, 0, 0.5],
+        [0, 10, 0.5],
+      ],
+      [
+        [10, 0, 0.5],
+        [10, 10, 0.5],
+      ],
+      [
+        [0, 20, 0.5],
+        [0, 30, 0.5],
+      ],
+    ];
+    expect(decodeInk(encodeInk(strokes))?.rtl).toBe(false);
+    expect(decodeInk(encodeInk([strokes[1]!, strokes[0]!, strokes[0]!]))?.rtl).toBe(true);
+    expect(decodeInk(encodeInk([strokes[0]!, strokes[0]!]))?.rtl).toBe(false);
+  });
+
   it('encodes no points as empty', () => {
     expect(encodeInk([])).toBe('');
     expect(encodeInk([[]])).toBe('');
