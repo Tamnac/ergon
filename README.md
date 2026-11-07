@@ -1,6 +1,6 @@
-A lovely weekly planner/todo app. Local-first, end-to-end encrypted sync, with handwriting and reminders. runs in the browser, on the desktop and on Android.
+# Ergon
 
-<!-- Screenshots: week view with a few todos, a heading and a list tab (light theme), and the phone layout (dark theme) -->
+A lovely weekly planner/todo app. Local-first, end-to-end encrypted sync, with handwriting and reminders. Runs in the browser, on the desktop and on Android.
 
 <table>
   <tr>
@@ -22,16 +22,16 @@ A lovely weekly planner/todo app. Local-first, end-to-end encrypted sync, with h
 
 ## Hosted version
 
-A hosted version is planned for people who don't want to run a server. The app works without any server, and sync is optional.
+[Try the server-free demo](https://tamnac.github.io/ergon/). A hosted sync service is planned for people who don't want to run a server. The app works without any server, and sync is optional.
 
 ## Self-hosting
 
-The sync server is a single Go binary with SQLite. It also serves the web app. It only stores ciphertext and metadata such as dates	.
+The sync server is a single Go binary with SQLite. It also serves the web app. Todo content is encrypted on your devices; the server also stores account, device, sync, push and reminder metadata.
 
 ### Docker
 
 ```sh
-git clone <this repository>
+git clone https://github.com/Tamnac/ergon.git
 cd ergon
 docker compose up -d
 ```
@@ -120,3 +120,5 @@ cd apps/server && go test ./...
 | `apps/server`   | Go sync and push server                                                 |
 | `protocol`      | Sync protocol specification, JSON schema and shared fixtures            |
 | `docs`          | [Design system](docs/design.md)                                         |
+
+Third-party license notices are in [THIRD_PARTY_NOTICES.txt](THIRD_PARTY_NOTICES.txt).
