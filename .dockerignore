@@ -22,4 +22,5 @@ apps/desktop/src-tauri/gen/android/local.properties
 ref.png
 PLAN.md
 AGENTS.md
+agents.md
 skills
