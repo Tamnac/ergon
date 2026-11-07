@@ -119,7 +119,7 @@ function SignIn(props: { onCreated: (phrase: string) => void }) {
   const [invite, setInvite] = createSignal('');
   const [inviteNeeded, setInviteNeeded] = createSignal(false);
   const [info] = createResource(
-    () => server() || false,
+    () => (syncOpen() && server()) || false,
     (url) => sync.info(url).catch(() => null),
   );
   const action = useAction((error) => {

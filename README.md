@@ -14,10 +14,10 @@ A lovely weekly planner/todo app. Local-first, end-to-end encrypted sync, with h
 - Day grid with 1 to 7 visible days, calendar view and easy date navigation
 - Todos, headings, lists and tabs, drag and drop (or Alt + ↑/↓) to reorder
 - Recurring todos and reminders
-- Handwriting with a pen support
+- Handwriting with pen support
 - Search, TeuxDeux import, JSON and Markdown export
 - Works offline as a PWA
-- Light and dark theme, configurable accent color
+- Light and dark theme, configurable accent color and a beautiful and unique design
 - Sync that the server cannot read: data is encrypted on your devices and unlocked by a recovery phrase. Link more devices with a QR code.
 
 ## Hosted version
@@ -26,7 +26,7 @@ A hosted version is planned for people who don't want to run a server. The app w
 
 ## Self-hosting
 
-The sync server is a single Go binary with SQLite. It also serves the web app. It only ever stores ciphertext.
+The sync server is a single Go binary with SQLite. It also serves the web app. It only stores ciphertext and metadata such as dates	.
 
 ### Docker
 

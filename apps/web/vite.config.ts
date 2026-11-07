@@ -18,6 +18,20 @@ interface Precache {
 /** Everything but source maps, the worker itself and the woff fallback of fonts that have woff2. */
 const isPrecached = (file: string) => file !== 'sw.js' && !/\.(map|woff)$/.test(file);
 
+/** Includes the notices for third-party code and assets in every distributed web build. */
+function thirdPartyNotices(): Plugin {
+  return {
+    name: 'ergon-third-party-notices',
+    generateBundle() {
+      this.emitFile({
+        type: 'asset',
+        fileName: 'THIRD_PARTY_NOTICES.txt',
+        source: readFileSync(new URL('../../THIRD_PARTY_NOTICES.txt', import.meta.url)),
+      });
+    },
+  };
+}
+
 /**
  * Bundles src/sw.ts into a classic script served as /sw.js. It sits at the root so the service
  * worker controls the whole app, and is bundled so it can use the core's crypto. In a build it
@@ -85,7 +99,7 @@ export default defineConfig({
   base: './',
   server: { proxy: api },
   preview: { proxy: api },
-  plugins: [solid(), serviceWorker()],
+  plugins: [solid(), thirdPartyNotices(), serviceWorker()],
   worker: { format: 'es' },
   optimizeDeps: { exclude: ['@journeyapps/wa-sqlite'] },
   build: { target: 'es2023' },
