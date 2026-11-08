@@ -16,6 +16,7 @@ import { UpdatePrompt } from './components/UpdatePrompt';
 import { applyAccent } from './lib/accent';
 import { setEffectLayer } from './lib/effects';
 import { installDesktop, isDesktop, isNative } from './lib/desktop';
+import { updateFavicon } from './lib/favicon';
 import { installServiceWorker } from './lib/pwa';
 import { addToToday, installShortcuts } from './lib/shortcuts';
 import { isPhone } from './lib/viewport';
@@ -36,6 +37,7 @@ export function App() {
     if (settings.theme === 'system') delete root.dataset.theme;
     else root.dataset.theme = settings.theme;
     const derived = applyAccent(settings.accent);
+    updateFavicon(settings.theme, settings.accent);
     localStorage.setItem(
       'ergon.appearance',
       JSON.stringify({ theme: settings.theme, accent: settings.accent, ...derived }),

@@ -1,5 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
-  <rect width="1024" height="1024" rx="224" fill="#6d28d9" />
-  <rect x="64" y="64" width="896" height="896" rx="176" fill="none" stroke="#fff" stroke-opacity=".35" stroke-width="16" />
-  <path fill="#fff" d="M336 224h376v96H448v128h224v96H448v160h272v96H336z" />
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 336" role="img" aria-label="Ergon">
+  <g fill="#000001">
+    <path d="M40 128V84A44 44 0 0 1 84 40H412A44 44 0 0 1 456 84V128Z"/>
+    <path d="M40 190H288V278H84A44 44 0 0 1 40 234Z"/>
+  </g>
+  <circle cx="394" cy="234" r="68.2" fill="#6d28d9"/>
 </svg>

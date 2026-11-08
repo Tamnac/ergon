@@ -11,15 +11,25 @@
 }
 
 .brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
   margin: 0;
+}
+
+.brand-name {
   writing-mode: vertical-rl;
   font: 600 var(--text-xl) / 1 var(--font-display);
   letter-spacing: 0.18em;
   text-transform: uppercase;
 }
 
-.brand-mark {
-  color: var(--accent-text);
+.app-icon {
+  display: block;
+  width: 32px;
+  height: auto;
+  transform: rotate(90deg);
 }
 
 .sidebar-actions {
@@ -42,9 +52,19 @@
 
 /* The bottom bar must fit 360px: brand, view switch and four icons. */
 .app.is-phone .brand {
+  flex-direction: row;
+  gap: var(--space-2);
+}
+
+.app.is-phone .brand-name {
   writing-mode: horizontal-tb;
   font-size: 1.125rem;
   letter-spacing: 0.1em;
+}
+
+.app.is-phone .app-icon {
+  width: 38px;
+  transform: none;
 }
 
 .app.is-phone .view-switch button {

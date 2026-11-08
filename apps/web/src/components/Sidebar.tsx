@@ -9,6 +9,7 @@ import {
   setSearchOpen,
   setSettingsOpen,
 } from '../state/view';
+import { AppIcon } from './AppIcon';
 import { IconButton } from './Icon';
 import { statusText } from './SyncDialog';
 import './Sidebar.css';
@@ -40,7 +41,8 @@ export function Sidebar() {
   return (
     <aside class="sidebar">
       <h1 class="brand">
-        Ergon<span class="brand-mark">*</span>
+        <span class="brand-name">Ergon</span>
+        <AppIcon />
       </h1>
       <Show when={isPhone()} fallback={actions}>
         <div class="view-switch" role="group" aria-label="View">

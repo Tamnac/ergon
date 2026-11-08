@@ -1,1 +1,8 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" rx="112" fill="#6d28d9"/><path d="M256 116V396M134.8 186L377.2 326M134.8 326L377.2 186" fill="none" stroke="#fff" stroke-width="44" stroke-linecap="round"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 336" role="img" aria-label="Ergon">
+  <style>@media (prefers-color-scheme: dark) { .mark { fill: #ffffff; } }</style>
+  <g class="mark" fill="#000001">
+    <path d="M40 128V84A44 44 0 0 1 84 40H412A44 44 0 0 1 456 84V128Z"/>
+    <path d="M40 190H288V278H84A44 44 0 0 1 40 234Z"/>
+  </g>
+  <circle cx="394" cy="234" r="68.2" fill="var(--accent, #6d28d9)"/>
+</svg>
