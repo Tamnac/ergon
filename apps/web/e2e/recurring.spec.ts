@@ -13,8 +13,11 @@ async function repeatDaily(page: Page, text: string) {
   await dialog.getByRole('button', { name: 'Save' }).click();
 }
 
-const choose = (page: Page, title: string, scope: string) =>
-  page.getByRole('dialog', { name: title }).getByRole('button', { name: scope }).click();
+async function choose(page: Page, title: string, scope: string) {
+  const dialog = page.getByRole('dialog', { name: title });
+  await dialog.getByRole('button', { name: scope }).click();
+  await expect(page.locator('dialog[open]')).toHaveCount(0);
+}
 
 async function edit(page: Page, offset: number, from: string, to: string) {
   await todo(day(page, offset), from).locator('.todo-text').click();
@@ -68,7 +71,9 @@ test('edits and deletes following occurrences', async ({ page }) => {
   await expect(todo(day(page, 2), 'Swim')).toBeVisible();
   await expect(todo(day(page, 1), 'Gym')).toBeVisible();
 
-  await todo(day(page, 3), 'Swim').focus();
+  const swim = todo(day(page, 3), 'Swim');
+  await swim.focus();
+  await expect(swim).toBeFocused();
   await page.keyboard.press('Delete');
   await choose(page, 'Delete repeating todo', 'This and following');
   await expect(todo(day(page, 3), 'Swim')).toHaveCount(0);
