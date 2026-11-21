@@ -50,16 +50,14 @@
   flex-direction: row;
 }
 
-/* The bottom bar must fit 360px: brand, view switch and four icons. */
-.app.is-phone .brand {
-  flex-direction: row;
-  gap: var(--space-2);
-}
-
+/* The bottom bar must fit 360px: icon, view switch and four icons. The name stays for screen readers. */
 .app.is-phone .brand-name {
-  writing-mode: horizontal-tb;
-  font-size: 1.125rem;
-  letter-spacing: 0.1em;
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 .app.is-phone .app-icon {
