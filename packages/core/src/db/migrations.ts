@@ -92,6 +92,9 @@ export const migrations: readonly string[] = [
   ALTER TABLE todo ADD COLUMN ink TEXT;
   ALTER TABLE recurrence ADD COLUMN ink TEXT;
   `,
+  `
+  ALTER TABLE todo ADD COLUMN pinned INTEGER NOT NULL DEFAULT 0;
+  `,
 ];
 
 export async function migrate(driver: SqlDriver): Promise<void> {

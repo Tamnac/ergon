@@ -81,6 +81,9 @@ const placeOf = (todo: Todo): Target =>
 const locationOf = (target: Target): Pick<Todo, 'date' | 'listId'> =>
   'date' in target ? { date: target.date, listId: null } : { date: null, listId: target.listId };
 
+/** A todo put on a past day stays there instead of rolling over to today. */
+const isPinnedOn = (target: Target) => 'date' in target && target.date < today();
+
 /** Todos in a day or list, in display order. */
 async function todosIn(target: Target): Promise<Todo[]> {
   if ('listId' in target) {
@@ -123,6 +126,7 @@ async function add(target: Target, content: Content) {
     ...patch('todo', newId(), {
       ...content,
       ...locationOf(target),
+      pinned: isPinnedOn(target),
       order,
       done: false,
     }),
@@ -311,7 +315,10 @@ async function place(todo: Todo, target: Target, index: number) {
     index,
   );
   await commit([
-    ...todoChanges(todo, moving ? { ...locationOf(target), order } : { order }),
+    ...todoChanges(
+      todo,
+      moving ? { ...locationOf(target), pinned: isPinnedOn(target), order } : { order },
+    ),
     ...reorderTodos(all, rekeyed),
   ]);
 }
@@ -325,9 +332,7 @@ export function moveByDays(todo: Todo, days: number) {
   return serial(async () => {
     const current = effectiveDate(todo, today());
     if (current === null) return;
-    const date = effectiveDate({ ...todo, date: addDays(current, days) }, today())!;
-    if (date === current) return;
-    const target = { date };
+    const target = { date: addDays(current, days) };
     await place(todo, target, (await todosIn(target)).length);
     setFocusRequest({ id: todo.id, key: targetKey(target) });
   });

@@ -16,6 +16,7 @@ function todo(date: string | null, extra: Partial<Todo> = {}): Todo {
     recurrenceId: null,
     occurrence: null,
     skipped: false,
+    pinned: false,
     reminder: null,
     deleted: false,
     ...extra,
@@ -28,6 +29,13 @@ describe('rollover', () => {
     expect(effectiveDate(todo('2026-09-20', { done: true }), today)).toBe('2026-09-20');
     expect(effectiveDate(todo('2026-09-28'), today)).toBe('2026-09-28');
     expect(effectiveDate(todo(null), today)).toBeNull();
+  });
+
+  it('keeps pinned todos on their past date', () => {
+    const pinned = todo('2026-09-20', { pinned: true });
+    expect(effectiveDate(pinned, today)).toBe('2026-09-20');
+    expect(completionChanges(pinned, true, today)).toHaveLength(1);
+    expect(reminderChanges(pinned, '09:30', today)).toHaveLength(1);
   });
 
   it('keeps recurring todos on their date', () => {

@@ -39,6 +39,7 @@ describe('Database', () => {
         recurrenceId: null,
         occurrence: null,
         skipped: false,
+        pinned: false,
         reminder: null,
         deleted: false,
       },
@@ -57,6 +58,24 @@ describe('Database', () => {
     expect(await ids(today, '2026-09-28')).toEqual(['old']);
     expect(await ids('2026-09-27', '2026-09-30')).toEqual(['future']);
     expect(await ids('2026-09-20', '2026-09-20')).toEqual(['done', 'old']);
+  });
+
+  it('keeps pinned past todos on their day', async () => {
+    const db = await openDb();
+    await db.write([
+      ...todo('pinned', '2026-09-20', { pinned: true }),
+      ...todo('old', '2026-09-20'),
+    ]);
+    const ids = async (from: string, to: string) =>
+      (await db.todosBetween(from, to, today)).map((t) => t.id);
+    expect(await ids(today, today)).toEqual(['old']);
+    expect(await ids('2026-09-20', '2026-09-26')).toEqual(['old', 'pinned']);
+    expect(
+      (await db.todoMarks('2026-09-01', '2026-09-30', today)).map((m) => [m.id, m.date]),
+    ).toEqual([
+      ['pinned', '2026-09-20'],
+      ['old', today],
+    ]);
   });
 
   it('returns todo marks on their effective date', async () => {

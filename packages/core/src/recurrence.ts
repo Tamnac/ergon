@@ -328,6 +328,7 @@ export function virtualOccurrences(
         recurrenceId: recurrence.id,
         occurrence: date,
         skipped: false,
+        pinned: false,
         reminder: recurrence.reminder,
         deleted: false,
         virtual: true,

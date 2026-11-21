@@ -36,3 +36,18 @@ test('moves between days and lists', async ({ page }) => {
   await expect(todo(day(page, 1), 'Learn piano')).toBeVisible();
   await expect(list.locator('.todo')).toHaveCount(0);
 });
+
+test('keeps an undone todo on a past day it was dragged to', async ({ page }) => {
+  await addTodos(day(page), 'Backdated', 'Stay');
+  await page.keyboard.press('ArrowLeft');
+  await drag(page, todo(day(page), 'Backdated'), day(page, -1).locator('.todo-filler').first());
+  await expect(todo(day(page, -1), 'Backdated')).toBeVisible();
+  await page.reload();
+  await page.keyboard.press('ArrowLeft');
+  await expect(todo(day(page, -1), 'Backdated')).toBeVisible();
+  await expect(day(page).locator('.todo')).toHaveText(['Stay']);
+
+  await drag(page, todo(day(page, -1), 'Backdated'), day(page).locator('.todo-filler').first());
+  await page.reload();
+  await expect(todo(day(page), 'Backdated')).toBeVisible();
+});

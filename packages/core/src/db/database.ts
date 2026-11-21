@@ -415,7 +415,7 @@ export class Database implements Storage {
 /** Text length an ink todo counts as in calendar marks. */
 const INK_MARK_LENGTH = 20;
 /** SQL condition for todos that show on today instead of their date; binds `today`. */
-const ROLLS_OVER = 'done = 0 AND date < ? AND "recurrenceId" IS NULL';
+const ROLLS_OVER = 'done = 0 AND date < ? AND "recurrenceId" IS NULL AND pinned = 0';
 
 interface FieldState {
   /** JSON-encoded. */

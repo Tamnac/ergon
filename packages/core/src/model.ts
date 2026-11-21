@@ -25,6 +25,8 @@ export interface Todo {
   /** Date the recurrence generated this occurrence for; kept when it moves. */
   occurrence: DateStr | null;
   skipped: boolean;
+  /** Stays on its past `date` instead of rolling over to today; set by dragging it there. */
+  pinned: boolean;
   /** Local time of day (`HH:MM`) to remind at on `date`; a virtual occurrence takes its recurrence's. */
   reminder: string | null;
   deleted: boolean;
@@ -109,6 +111,7 @@ export const defaults: { [E in Entity]: Fields<E> } = {
     recurrenceId: null,
     occurrence: null,
     skipped: false,
+    pinned: false,
     reminder: null,
     deleted: false,
   },

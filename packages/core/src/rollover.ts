@@ -2,12 +2,16 @@ import type { DateStr } from './date';
 import type { Change, Todo } from './model';
 import { todoChanges } from './recurrence';
 
-/** Day a todo shows on: undone non-recurring todos from the past roll over to today. */
+/** Day a todo shows on: undone non-recurring todos from the past roll over to today unless pinned. */
 export function effectiveDate(
-  todo: Pick<Todo, 'date' | 'done' | 'recurrenceId'>,
+  todo: Pick<Todo, 'date' | 'done' | 'recurrenceId' | 'pinned'>,
   today: DateStr,
 ): DateStr | null {
-  return todo.date !== null && !todo.done && todo.recurrenceId === null && todo.date < today
+  return todo.date !== null &&
+    !todo.done &&
+    !todo.pinned &&
+    todo.recurrenceId === null &&
+    todo.date < today
     ? today
     : todo.date;
 }
