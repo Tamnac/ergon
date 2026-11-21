@@ -59,6 +59,12 @@
   padding-left: var(--space-2);
 }
 
+.app.is-phone .tabs .icon-button {
+  flex: none;
+  width: 44px;
+  height: 44px;
+}
+
 .tab-list {
   display: flex;
   gap: var(--space-1);
